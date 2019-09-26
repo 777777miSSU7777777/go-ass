@@ -11,9 +11,7 @@ CREATE TABLE authors (
 
 CREATE TABLE audio (
     id BIGINT NOT NULL AUTO_INCREMENT,
-    author_id BIGINT NOT NULL,
+    author NVARCHAR(50) NOT_NULL,
     title NVARCHAR(50),
     PRIMARY KEY(id),
-    FOREIGN KEY(author_id)
-        REFERENCES authors(id)
 );
