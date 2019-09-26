@@ -13,5 +13,5 @@ CREATE TABLE audio (
     id BIGINT NOT NULL AUTO_INCREMENT,
     author NVARCHAR(50) NOT_NULL,
     title NVARCHAR(50),
-    PRIMARY KEY(id),
+    PRIMARY KEY(id)
 );
