@@ -10,6 +10,7 @@ import (
 )
 
 var AudioNotFoundError = errors.New("audio not found error")
+var TableNotFoundError = errors.New("table not found error")
 
 type Repository struct {
 	db *sql.DB
@@ -19,15 +20,29 @@ func New(db *sql.DB) Repository {
 	return Repository{db}
 }
 
-func (r Repository) GetLastAudioID() (int64, error) {
-	row := r.db.QueryRow("SELECT id FROM audio GROUP BY id DESC LIMIT 1")
-	var id int64
-	err := row.Scan(&id)
+func (r Repository) setLastID(table string, id int64) error {
+	result, err := r.db.Exec("UPDATE table_last_id SET last_id=? WHERE table_name=?", id, table)
 	if err != nil {
-		return -1, fmt.Errorf("get last audio id error: %v", err)
+		return fmt.Errorf("update last id error: %v", err)
 	}
 
-	return id, nil
+	affected, err := result.RowsAffected()
+	if affected == 0 {
+		return TableNotFoundError
+	}
+
+	return nil
+}
+
+func (r Repository) GetLastID(table string) (int64, error) {
+	row := r.db.QueryRow("SELECT last_id FROM tables_last_id WHERE table_name=?", table)
+	var lastID int64
+	err := row.Scan(&lastID)
+	if err != nil {
+		return -1, fmt.Errorf("error while getting table last id: %v", err)
+	}
+
+	return lastID, nil
 }
 
 func (r Repository) AddAudio(author, title string) (int64, error) {
@@ -40,6 +55,8 @@ func (r Repository) AddAudio(author, title string) (int64, error) {
 	if err != nil {
 		return -1, fmt.Errorf("add audio error: %v", err)
 	}
+
+	_ = r.setLastID("audio", id)
 
 	return id, nil
 }
