@@ -18,8 +18,6 @@ import (
 	"github.com/777777miSSU7777777/go-ass/service"
 )
 
-// var locationPattern = "%s/%d/%s/%s"
-
 func renderIndex(w http.ResponseWriter, r *http.Request) {
 	pagePath := path.Join("frontend", "index.html")
 
@@ -61,10 +59,8 @@ func main() {
 	svc := service.New(repo)
 	m := api.NewUploadManager(baseLocation)
 	apiHandlers := api.NewApi(svc, m)
-	// apiRouter := api.NewAPIRouter(apiHandlers)
 
 	r := mux.NewRouter()
-	// r.Handle("/api", apiRouter)
 	api.NewAPIRouter(r, apiHandlers)
 	r.Handle("/health-check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
