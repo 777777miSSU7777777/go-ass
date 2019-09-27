@@ -10,3 +10,11 @@ CREATE TABLE audio (
     CHECK(author <> ""),
     CHECK(title <> "")
 );
+
+CREATE TABLE tables_last_id (
+    table_name NVARCHAR(50) NOT NULL,
+    last_id BIGINT NOT NULL,
+    PRIMARY KEY(table_name)
+);
+
+INSERT INTO tables_last_id(table_name, last_id) VALUES ("audio", 0);
