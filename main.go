@@ -61,14 +61,19 @@ func main() {
 	apiHandlers := api.NewApi(svc, m)
 
 	r := mux.NewRouter()
+
 	api.NewAPIRouter(r, apiHandlers)
+
 	r.Handle("/health-check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}))
 	r.Path("/").HandlerFunc(renderIndex)
 
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend/"))))
+	http.Handle("/", r)
+
 	fmt.Println("started")
-	err = http.ListenAndServe(":8080", r)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
