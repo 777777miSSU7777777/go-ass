@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
+	"path"
 
 	"github.com/gorilla/mux"
 
@@ -17,6 +19,21 @@ import (
 )
 
 // var locationPattern = "%s/%d/%s/%s"
+
+func renderIndex(w http.ResponseWriter, r *http.Request) {
+	pagePath := path.Join("frontend", "index.html")
+
+	htmlPage, err := template.ParseFiles(pagePath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = htmlPage.Execute(w, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 
 func main() {
 	var connectionString string
@@ -52,6 +69,7 @@ func main() {
 	r.Handle("/health-check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}))
+	r.Path("/").HandlerFunc(renderIndex)
 
 	fmt.Println("started")
 	err = http.ListenAndServe(":8080", r)
