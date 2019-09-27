@@ -23,7 +23,12 @@ func NewUploadManager(base string) UploadManager {
 }
 
 func (m UploadManager) Upload(w http.ResponseWriter, r *http.Request, id int64) error {
-	r.ParseMultipartForm(20 << 20)
+	err := r.ParseMultipartForm(20 << 20)
+	if err != nil {
+		writeError(w, 400, ParseFormError, fmt.Errorf("error while parsing file form: %v", err))
+		return err
+	}
+
 	formfile, _, err := r.FormFile("audiofile")
 	if err != nil {
 		writeError(w, 400, FileUploadError, fmt.Errorf("error while uploading file: %v", err))
