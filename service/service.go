@@ -13,6 +13,16 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
+func (s Service) GetLastAudioID() (int64, error) {
+	id, err := s.repo.GetLastID("audio")
+
+	if err != nil {
+		return -1, err
+	}
+
+	return id, nil
+}
+
 func (s Service) AddAudio(author, title string) (model.Audio, error) {
 	err := model.ValidateAudio(author, title)
 	if err != nil {
