@@ -255,7 +255,6 @@ const renderAudioList = (tracks) => {
 const renderTracksControls = () => {
     let tracksList = audioTrackList.children;
     for (let i = 0; i < tracksList.length; i++){
-        console.log(tracksList[i].firstElementChild);
         tracksList[i].firstElementChild.className = "button play";
     }
     document.getElementById(getCurrentTrackID()).firstElementChild.className = "button pause";
