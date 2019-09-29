@@ -7,6 +7,10 @@ var player;
 var hls;
 var searchField;
 var searchButton;
+var openAddAudioModalButton;
+var addAudioModal;
+var closeAudioModalButton;
+var addAudioButton;
 
 window.onload = () => {
     audioTrackList = document.getElementById("audio-list-container");
@@ -16,6 +20,10 @@ window.onload = () => {
     hls = new Hls();
     searchField = document.getElementById("search-field");
     searchButton = document.getElementById("search-button");
+    openAddAudioModalButton = document.getElementById("open-audio-form-modal-button");
+    addAudioModal = document.getElementById("add-audio-modal");
+    closeAudioModalButton = document.getElementById("close-audio-modal");
+    addAudioButton = document.getElementById("add-audio-button");
 
     player.onpause = () => {
         let controlButton = document.getElementById(getCurrentTrackID()).firstElementChild;
@@ -72,7 +80,45 @@ window.onload = () => {
             e.preventDefault();
             player.volume -= 0.05;
         };
-    })
+    });
+
+    openAddAudioModalButton.onclick = () => {
+        addAudioModal.style.display = "block";
+    };
+
+    closeAudioModalButton.onclick = () => {
+        addAudioModal.style.display = "none";
+    };
+
+    window.onclick = e => {
+        if (e.target == addAudioModal) {
+            addAudioModal.style.display = "none";
+        }
+    }
+
+    addAudioButton.onclick = e => {
+        let author = document.getElementById("audio-author-field").value;
+        document.getElementById("audio-author-field").value = "";
+        let title = document.getElementById("audio-title-field").value;
+        document.getElementById("audio-title-field").value = "";
+        let audioFile = document.getElementById("audio-file-field").files[0];
+        document.getElementById("audio-file-field").value = "";
+
+        let formData = new FormData();
+        formData.append("author", author);
+        formData.append("title", title);
+        formData.append("audiofile", audioFile);
+
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/audio");
+        xhr.send(formData);
+        xhr.onload = xhr.onerror = () => {
+            fetch("/api/audio", { method: "GET"})
+            .then(resp => resp.json())
+            .then(data => renderAudioList(data["audio"]));
+        }
+        addAudioModal.style.display = "none";
+    }
 
     fetch("/api/audio", { method: "GET"})
         .then(resp => resp.json())
