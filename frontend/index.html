@@ -3,8 +3,26 @@
     <head>
         <title>GO ASS</title>
         <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="/static/src/css/main.css">
+        <script src="/static/src/js/hls.js"></script>
+        <script src="/static/src/js/main.js"></script>
     </head>
     <body>
-        Hello World
+        <div id="root">
+            <div id="player-container">
+                <div id="player-header">
+                    <p id="current-author">Author</p>
+                    <p> - </p>
+                    <p id="current-title">Title</p>
+                </div>
+                <audio controls id="player" align="center"></audio>
+            </div>
+            <div id="search-container">
+                <input type="text" id="search-field">
+                <input type="button" value="Search" id="search-button">
+            </div>
+            <div id="audio-list-container">
+            </div>
+        </div>
     </body>
 </html>
