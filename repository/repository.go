@@ -21,7 +21,7 @@ func New(db *sql.DB) Repository {
 }
 
 func (r Repository) setLastID(table string, id int64) error {
-	result, err := r.db.Exec("UPDATE table_last_id SET last_id=? WHERE table_name='?'", id, table)
+	result, err := r.db.Exec("UPDATE tables_last_id SET last_id=? WHERE table_name=?", id, table)
 	if err != nil {
 		return fmt.Errorf("update last id error: %v", err)
 	}
