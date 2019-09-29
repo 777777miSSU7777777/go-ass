@@ -5,9 +5,6 @@ type AddAudioRequest struct {
 	Title  string `json:"title"`
 }
 
-type GetAllAudioRequest struct {
-}
-
 type GetAudioByIDRequest struct {
 	ID int64
 }

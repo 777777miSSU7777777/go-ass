@@ -78,6 +78,15 @@ func (s Service) GetAudioByTitle(title string) ([]model.Audio, error) {
 	return audio, nil
 }
 
+func (s Service) GetAudioByKey(key string) ([]model.Audio, error) {
+	audio, err := s.repo.GetAudioByKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return audio, nil
+}
+
 func (s Service) UpdateAudioByID(id int64, author, title string) (model.Audio, error) {
 	err := model.ValidateAudio(author, title)
 	if err != nil {

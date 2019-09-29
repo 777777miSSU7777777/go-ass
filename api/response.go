@@ -10,13 +10,11 @@ type AddAudioResponse struct {
 	Title  string `json:"title"`
 }
 
-type GetAllAudioResponse struct {
+type GetAudioListResponse struct {
 	Audio []model.Audio `json:"audio"`
 }
 
 type GetAudioByIDResponse AddAudioResponse
-
-type GetAudioByKeyResponse GetAllAudioResponse
 
 type UpdateAudioByIDResponse AddAudioResponse
 

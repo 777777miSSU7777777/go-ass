@@ -159,6 +159,35 @@ func (r Repository) GetAudioByTitle(title string) ([]model.Audio, error) {
 	return audio, nil
 }
 
+func (r Repository) GetAudioByKey(key string) ([]model.Audio, error) {
+	pattern := "%" + key + "%"
+	rows, err := r.db.Query("SELECT * FROM audio WHERE (author LIKE ? OR title LIKE ?)", pattern, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("get audio by key error: %v", err)
+	}
+	defer rows.Close()
+
+	if err == sql.ErrNoRows {
+		return nil, AudioNotFoundError
+	}
+
+	audio := []model.Audio{}
+	for rows.Next() {
+		track := model.Audio{}
+		err := rows.Scan(&track.ID, &track.Author, &track.Title)
+		if err != nil {
+			return nil, fmt.Errorf("audio scan error: %v", err)
+		}
+		audio = append(audio, track)
+	}
+
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("audio scan error: %v", err)
+	}
+
+	return audio, nil
+}
+
 func (r Repository) UpdateAudioByID(id int64, author, title string) error {
 	result, err := r.db.Exec("UPDATE audio SET author=?, title=? WHERE id=?", author, title, id)
 	if err != nil {

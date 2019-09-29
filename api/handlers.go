@@ -71,19 +71,48 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(AddAudioResponse{resp.ID, resp.Author, resp.Title})
 }
 
-func (a API) GetAllAudio(w http.ResponseWriter, r *http.Request) {
-	resp, err := a.svc.GetAllAudio()
-	if err != nil {
-		if err.Error() == repository.AudioNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
+func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("key")
+	var resp []model.Audio
+	var err error
+	if key != "" {
+		resp, err = a.svc.GetAudioByKey(key)
+		if err != nil {
+			if err.Error() == repository.AudioNotFoundError.Error() {
+				writeError(w, 400, NotFoundError, err)
+			} else {
+				writeError(w, 400, ServiceError, err)
+			}
+			return
 		}
-		return
+	} else {
+		resp, err = a.svc.GetAllAudio()
+		if err != nil {
+			if err.Error() == repository.AudioNotFoundError.Error() {
+				writeError(w, 404, NotFoundError, err)
+			} else {
+				writeError(w, 400, ServiceError, err)
+			}
+			return
+		}
 	}
 
-	_ = json.NewEncoder(w).Encode(GetAllAudioResponse{resp})
+	_ = json.NewEncoder(w).Encode(GetAudioListResponse{resp})
 }
+
+// func (a API) GetAllAudio(w http.ResponseWriter, r *http.Request) {
+// 	resp, err := a.svc.GetAllAudio()
+// 	if err != nil {
+// 		if err.Error() == repository.AudioNotFoundError.Error() {
+// 			writeError(w, 404, NotFoundError, err)
+// 		} else {
+// 			writeError(w, 400, ServiceError, err)
+// 		}
+// 		return
+// 	}
+
+// 	_ = json.NewEncoder(w).Encode(GetAllAudioResponse{resp})
+// }
 
 func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req GetAudioByIDRequest
@@ -108,44 +137,25 @@ func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(GetAudioByIDResponse{resp.ID, resp.Author, resp.Title})
 }
 
-func (a API) GetAudioByKey(w http.ResponseWriter, r *http.Request) {
-	key := r.URL.Query().Get("key")
-	if key == "" {
-		writeError(w, 400, QueryStringError, fmt.Errorf("key for search not found error"))
-		return
-	}
-	audio := make([]model.Audio, 0)
+// func (a API) GetAudioByKey(w http.ResponseWriter, r *http.Request) {
+// 	key := r.URL.Query().Get("key")
+// 	if key == "" {
+// 		writeError(w, 400, QueryStringError, fmt.Errorf("key for search not found error"))
+// 		return
+// 	}
 
-	authorResp, err := a.svc.GetAudioByAuthor(key)
-	if err != nil {
-		if err.Error() == repository.AudioNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
-	}
-	audio = append(audio, authorResp...)
+// 	resp, err := a.svc.GetAudioByKey(key)
+// 	if err != nil {
+// 		if err.Error() == repository.AudioNotFoundError.Error() {
+// 			writeError(w, 400, NotFoundError, err)
+// 		} else {
+// 			writeError(w, 400, ServiceError, err)
+// 		}
+// 		return
+// 	}
 
-	titleResp, err := a.svc.GetAudioByTitle(key)
-	if err != nil {
-		if err.Error() == repository.AudioNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
-	}
-
-	audio = append(audio, titleResp...)
-
-	if len(audio) == 0 {
-		writeError(w, 404, NotFoundError, err)
-		return
-	}
-
-	_ = json.NewEncoder(w).Encode(GetAudioByKeyResponse{audio})
-}
+// 	_ = json.NewEncoder(w).Encode(GetAudioByKeyResponse{resp})
+// }
 
 func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req UpdateAudioByIDRequest
