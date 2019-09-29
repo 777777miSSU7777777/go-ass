@@ -120,6 +120,15 @@ window.onload = () => {
         addAudioModal.style.display = "none";
     }
 
+    player.onkeydown = e => {
+        if (e.keyCode == 37){
+            rewind();
+        }
+        if (e.keyCode == 39){
+            flashForward();
+        }
+    }
+
     fetch("/api/audio", { method: "GET"})
         .then(resp => resp.json())
         .then(data => renderAudioList(data["audio"]));
@@ -261,3 +270,11 @@ const searchAudio = () => {
             renderAudioList(data["audio"])
         });
 };
+
+const rewind = () => {
+    player.currentTime -= 10;
+}
+
+const flashForward = () => {
+    player.currentTime += 10;
+}
