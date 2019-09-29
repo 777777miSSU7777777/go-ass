@@ -12,10 +12,10 @@ func NewAPIRouter(r *mux.Router, api API) {
 
 	s.Methods("POST").Path("/audio").HandlerFunc(api.AddAudio)
 	s.Methods("GET").Path("/audio").HandlerFunc(api.GetAllAudio)
-	s.Methods("GET").Path("/audio/{id}").HandlerFunc(api.GetAudioByID)
+	s.Methods("GET").Path("/audio/{id:[0-9]+}").HandlerFunc(api.GetAudioByID)
 	s.Methods("GET").Path("/audio/{key}").HandlerFunc(api.GetAudioByKey)
-	s.Methods("PUT").Path("/audio/{id}").HandlerFunc(api.UpdateAudioByID)
-	s.Methods("DELETE").Path("/audio/{id}").HandlerFunc(api.DeleteAudioByID)
+	s.Methods("PUT").Path("/audio/{id:[0-9]+}").HandlerFunc(api.UpdateAudioByID)
+	s.Methods("DELETE").Path("/audio/{id:[0-9]+}").HandlerFunc(api.DeleteAudioByID)
 }
 
 func jsonTypeMiddleware(next http.Handler) http.Handler {
