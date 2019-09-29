@@ -16,6 +16,7 @@ import (
 	"github.com/777777miSSU7777777/go-ass/api"
 	"github.com/777777miSSU7777777/go-ass/repository"
 	"github.com/777777miSSU7777777/go-ass/service"
+	"github.com/777777miSSU7777777/go-ass/stream"
 )
 
 func renderIndex(w http.ResponseWriter, r *http.Request) {
@@ -57,12 +58,15 @@ func main() {
 
 	repo := repository.New(db)
 	svc := service.New(repo)
-	m := api.NewUploadManager(baseLocation)
-	apiHandlers := api.NewApi(svc, m)
+	u := api.NewUploadManager(baseLocation)
+	m := stream.NewMediaManager(baseLocation)
+	apiHandlers := api.NewApi(svc, u)
+	streamHandlers := stream.NewStreamAPI(m)
 
 	r := mux.NewRouter()
 
 	api.NewAPIRouter(r, apiHandlers)
+	stream.NewStreamRouter(r, streamHandlers)
 
 	r.Handle("/health-check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
