@@ -112,11 +112,12 @@ window.onload = () => {
         let xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/audio");
         xhr.send(formData);
-        xhr.onload = xhr.onerror = () => {
-            fetch("/api/audio", { method: "GET"})
-            .then(resp => resp.json())
-            .then(data => renderAudioList(data["audio"]));
-        }
+        xhr.onload = () => {
+            if (xhr.status == 200){
+                let data = JSON.parse(xhr.responseText);
+                audioTrackList.appendChild(createAudioTrackElement(data.id, data.author, data.title));
+            }
+        };
         addAudioModal.style.display = "none";
     }
 
