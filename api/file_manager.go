@@ -13,16 +13,17 @@ var FileReadError = "FILE READ ERROR"
 var FileWriteError = "FILE WRITE ERROR"
 var ParseFormError = "PARSE FORM ERROR"
 var HLSError = "HLS ERROR"
+var DeleteAudioError = "DELETE AUDIO ERROR"
 
-type UploadManager struct {
+type FileManager struct {
 	baseLocation string
 }
 
-func NewUploadManager(base string) UploadManager {
-	return UploadManager{base}
+func NewFileManager(base string) FileManager {
+	return FileManager{base}
 }
 
-func (m UploadManager) Upload(w http.ResponseWriter, r *http.Request, id int64) error {
+func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id int64) error {
 	err := r.ParseMultipartForm(20 << 20)
 	if err != nil {
 		writeError(w, 400, ParseFormError, fmt.Errorf("error while parsing file form: %v", err))
@@ -70,7 +71,7 @@ func (m UploadManager) Upload(w http.ResponseWriter, r *http.Request, id int64) 
 	return nil
 }
 
-func (m UploadManager) transcodeToHLS(id int64) error {
+func (m FileManager) transcodeToHLS(id int64) error {
 	err := os.MkdirAll(fmt.Sprintf("%s/%d/hls", m.baseLocation, id), 0755)
 	if err != nil {
 		return err
@@ -89,6 +90,16 @@ func (m UploadManager) transcodeToHLS(id int64) error {
 
 	err = cmd.Run()
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m FileManager) Delete(w http.ResponseWriter, id int64) error {
+	err := os.RemoveAll(fmt.Sprintf("%s/%d", m.baseLocation, id))
+	if err != nil {
+		writeError(w, 400, DeleteAudioError, fmt.Errorf("error while deleting audio: %v", err))
 		return err
 	}
 

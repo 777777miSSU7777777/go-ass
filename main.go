@@ -58,7 +58,7 @@ func main() {
 
 	repo := repository.New(db)
 	svc := service.New(repo)
-	u := api.NewUploadManager(baseLocation)
+	u := api.NewFileManager(baseLocation)
 	m := stream.NewMediaManager(baseLocation)
 	apiHandlers := api.NewApi(svc, u)
 	streamHandlers := stream.NewStreamAPI(m)

@@ -33,10 +33,10 @@ func writeError(w http.ResponseWriter, statusCode int, errType string, err error
 
 type API struct {
 	svc service.Service
-	m   UploadManager
+	m   FileManager
 }
 
-func NewApi(svc service.Service, m UploadManager) API {
+func NewApi(svc service.Service, m FileManager) API {
 	return API{svc, m}
 }
 
@@ -53,6 +53,7 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 
 	err = a.m.Upload(w, r, lastID+1)
 	if err != nil {
+		_ = a.m.Delete(w, lastID+1)
 		return
 	}
 
@@ -65,6 +66,7 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 400, ServiceError, err)
 			fmt.Println(err)
 		}
+		_ = a.m.Delete(resp.iD)
 		return
 	}
 
@@ -100,20 +102,6 @@ func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(GetAudioListResponse{resp})
 }
 
-// func (a API) GetAllAudio(w http.ResponseWriter, r *http.Request) {
-// 	resp, err := a.svc.GetAllAudio()
-// 	if err != nil {
-// 		if err.Error() == repository.AudioNotFoundError.Error() {
-// 			writeError(w, 404, NotFoundError, err)
-// 		} else {
-// 			writeError(w, 400, ServiceError, err)
-// 		}
-// 		return
-// 	}
-
-// 	_ = json.NewEncoder(w).Encode(GetAllAudioResponse{resp})
-// }
-
 func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req GetAudioByIDRequest
 	vars := mux.Vars(r)
@@ -136,26 +124,6 @@ func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewEncoder(w).Encode(GetAudioByIDResponse{resp.ID, resp.Author, resp.Title})
 }
-
-// func (a API) GetAudioByKey(w http.ResponseWriter, r *http.Request) {
-// 	key := r.URL.Query().Get("key")
-// 	if key == "" {
-// 		writeError(w, 400, QueryStringError, fmt.Errorf("key for search not found error"))
-// 		return
-// 	}
-
-// 	resp, err := a.svc.GetAudioByKey(key)
-// 	if err != nil {
-// 		if err.Error() == repository.AudioNotFoundError.Error() {
-// 			writeError(w, 400, NotFoundError, err)
-// 		} else {
-// 			writeError(w, 400, ServiceError, err)
-// 		}
-// 		return
-// 	}
-
-// 	_ = json.NewEncoder(w).Encode(GetAudioByKeyResponse{resp})
-// }
 
 func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req UpdateAudioByIDRequest
@@ -195,6 +163,11 @@ func (a API) DeleteAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.ID = id
+
+	err = a.m.Delete(w, req.ID)
+	if err != nil {
+		return
+	}
 
 	err = a.svc.DeleteAudioByID(req.ID)
 	if err != nil {
