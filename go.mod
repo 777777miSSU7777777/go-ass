@@ -1,4 +1,4 @@
-module goass
+module github.com/777777miSSU7777777/go-ass
 
 go 1.12
 
