@@ -154,6 +154,13 @@ const createAudioTrackElement = (id, author, title) => {
     titleElement.className = "title";
     titleElement.innerText = title;
 
+    let rightControls = document.createElement("div");
+    rightControls.className = "right-controls";
+
+    let downloadButton = document.createElement("div");
+    downloadButton.className = "button download";
+    downloadButton.addEventListener("click", downloadAudio);
+
     let deleteButton = document.createElement("div");
     deleteButton.className = "button delete";
     deleteButton.addEventListener("click", deleteAudio);
@@ -162,7 +169,9 @@ const createAudioTrackElement = (id, author, title) => {
     audioTrackElement.appendChild(authorElement);
     audioTrackElement.appendChild(delimiterElement);
     audioTrackElement.appendChild(titleElement);
-    audioTrackElement.appendChild(deleteButton);
+    rightControls.appendChild(downloadButton);
+    rightControls.appendChild(deleteButton);
+    audioTrackElement.appendChild(rightControls);
 
     return audioTrackElement;
 };
@@ -284,14 +293,34 @@ const flashForward = () => {
 }
 
 const deleteAudio = e => {
-    let id = e.target.parentNode.id;
+    let track = e.target.parentNode.parentNode;
+    let id = track.id;
     let xhr = new XMLHttpRequest();
     xhr.open("DELETE", "/api/audio/" + id);
-    xhr.send()
+    xhr.send();
 
     xhr.onload = () => {
         if (xhr.status == 200) {
-            e.target.parentNode.remove();
+            track.remove();
         }
     };
+}
+
+const downloadAudio = e => {
+    let track = e.target.parentNode.parentNode;
+    let id = track.id;
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", "/media/" + id + "/download");
+    xhr.send();
+
+    xhr.onload = () => {
+        if (xhr.status == 200){
+            var a = document.createElement("a");
+            let author = track.getElementsByClassName("author")[0].innerText;
+            let title = track.getElementsByClassName("title")[0].innerText;
+            a.href = xhr.responseURL;
+            a.setAttribute("download", author + " - " + title);
+            a.click();
+        }
+    }
 }

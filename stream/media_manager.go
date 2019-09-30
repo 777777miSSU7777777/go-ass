@@ -24,3 +24,9 @@ func (m MediaManager) ServeTs(w http.ResponseWriter, r *http.Request, id int64, 
 	http.ServeFile(w, r, tsFile)
 	w.Header().Set("Content-Type", "video/MP2T")
 }
+
+func (m MediaManager) ServerMp3(w http.ResponseWriter, r *http.Request, id int64) {
+	mp3File := fmt.Sprintf("%s/%d/mp3/audio%d.mp3", m.baseLocation, id, id)
+	http.ServeFile(w, r, mp3File)
+	w.Header().Set("Content-Type", "audio/mpeg")
+}

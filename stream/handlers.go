@@ -30,3 +30,14 @@ func (a StreamAPI) Stream(w http.ResponseWriter, r *http.Request) {
 		a.m.ServeTs(w, r, id, seg)
 	}
 }
+
+func (a StreamAPI) Download(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	a.m.ServerMp3(w, r, id)
+}
