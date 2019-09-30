@@ -90,19 +90,58 @@ window.onload = () => {
         addAudioModal.style.display = "none";
     };
 
-    window.onclick = e => {
-        if (e.target == addAudioModal) {
-            addAudioModal.style.display = "none";
-        }
-    }
-
     addAudioButton.onclick = e => {
-        let author = document.getElementById("audio-author-field").value;
-        document.getElementById("audio-author-field").value = "";
-        let title = document.getElementById("audio-title-field").value;
-        document.getElementById("audio-title-field").value = "";
-        let audioFile = document.getElementById("audio-file-field").files[0];
-        document.getElementById("audio-file-field").value = "";
+        let authorField = document.getElementById("audio-author-field");
+        let titleField = document.getElementById("audio-title-field");
+        let fileField = document.getElementById("audio-file-field")
+
+        if (authorField.previousElementSibling.className == "validation-error"){
+            authorField.previousElementSibling.remove();
+        }
+        if (titleField.previousElementSibling.className == "validation-error"){
+            titleField.previousElementSibling.remove();
+        }
+        if (fileField.previousElementSibling.className == "validation-error"){
+            fileField.previousElementSibling.remove();
+        }
+
+        let hasErr = false;
+
+        let author = authorField.value;
+        if (author == ""){
+            let err = document.createElement("p");
+            err.className = "validation-error";
+            err.innerText = "Author name is empty";
+            authorField.parentNode.insertBefore(err, authorField);
+            hasErr = true;
+        }
+
+        let title = titleField.value;
+        if (title == ""){
+            let err = document.createElement("p");
+            err.className = "validation-error";
+            err.innerText = "Audio title name is empty";
+            titleField.parentNode.insertBefore(err, titleField);
+            hasErr = true;
+        }
+
+        if (fileField.files.length == 0){
+            let err = document.createElement("p");
+            err.className = "validation-error";
+            err.innerText = "There is no file";
+            fileField.parentNode.insertBefore(err, fileField);
+            hasErr = true;
+        }
+
+        if (hasErr) {
+            return;
+        }
+
+        let audioFile = fileField.files[0];
+
+        authorField.value = "";
+        titleField.value = "";
+        fileField.value = "";
 
         let formData = new FormData();
         formData.append("author", author);
