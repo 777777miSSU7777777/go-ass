@@ -206,3 +206,13 @@
     border: 1px solid #777;
     padding: 0.25em;
 }
+
+.button.delete {
+    background-image: url(../../img/delete-track-button.png);
+    background-repeat: no-repeat;
+    background-size: 100%;
+    width: 6%;
+    margin-top: 0.15%;
+    margin-left: auto;
+    margin-right: 0.25%;
+}

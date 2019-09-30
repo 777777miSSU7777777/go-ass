@@ -154,10 +154,15 @@ const createAudioTrackElement = (id, author, title) => {
     titleElement.className = "title";
     titleElement.innerText = title;
 
+    let deleteButton = document.createElement("div");
+    deleteButton.className = "button delete";
+    deleteButton.addEventListener("click", deleteAudio);
+
     audioTrackElement.appendChild(controlButton);
     audioTrackElement.appendChild(authorElement);
     audioTrackElement.appendChild(delimiterElement);
     audioTrackElement.appendChild(titleElement);
+    audioTrackElement.appendChild(deleteButton);
 
     return audioTrackElement;
 };
@@ -276,4 +281,17 @@ const rewind = () => {
 
 const flashForward = () => {
     player.currentTime += 10;
+}
+
+const deleteAudio = e => {
+    let id = e.target.parentNode.id;
+    let xhr = new XMLHttpRequest();
+    xhr.open("DELETE", "/api/audio/" + id);
+    xhr.send()
+
+    xhr.onload = () => {
+        if (xhr.status == 200) {
+            e.target.parentNode.remove();
+        }
+    };
 }
