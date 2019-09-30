@@ -66,7 +66,7 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 400, ServiceError, err)
 			fmt.Println(err)
 		}
-		_ = a.m.Delete(resp.iD)
+		_ = a.m.Delete(w, resp.ID)
 		return
 	}
 
