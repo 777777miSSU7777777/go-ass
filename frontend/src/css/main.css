@@ -158,7 +158,7 @@
 
 .close-audio-modal:hover,
 .close-audio-modal:focus {
-    color: black;
+    color: white;
     text-decoration: none;
     cursor: pointer;
 }

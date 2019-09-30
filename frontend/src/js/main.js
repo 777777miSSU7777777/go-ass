@@ -11,6 +11,9 @@ var openAddAudioModalButton;
 var addAudioModal;
 var closeAudioModalButton;
 var addAudioButton;
+var authorField;
+var titleField;
+var fileField;
 
 window.onload = () => {
     audioTrackList = document.getElementById("audio-list-container");
@@ -23,6 +26,9 @@ window.onload = () => {
     openAddAudioModalButton = document.getElementById("open-audio-form-modal-button");
     addAudioModal = document.getElementById("add-audio-modal");
     closeAudioModalButton = document.getElementById("close-audio-modal");
+    authorField = document.getElementById("audio-author-field");
+    titleField = document.getElementById("audio-title-field");
+    fileField = document.getElementById("audio-file-field");
     addAudioButton = document.getElementById("add-audio-button");
 
     player.onpause = () => {
@@ -87,23 +93,13 @@ window.onload = () => {
     };
 
     closeAudioModalButton.onclick = () => {
+        clearAddAudioFormErrors();
+        clearAddAudioFormValues();
         addAudioModal.style.display = "none";
     };
 
     addAudioButton.onclick = e => {
-        let authorField = document.getElementById("audio-author-field");
-        let titleField = document.getElementById("audio-title-field");
-        let fileField = document.getElementById("audio-file-field")
-
-        if (authorField.previousElementSibling.className == "validation-error"){
-            authorField.previousElementSibling.remove();
-        }
-        if (titleField.previousElementSibling.className == "validation-error"){
-            titleField.previousElementSibling.remove();
-        }
-        if (fileField.previousElementSibling.className == "validation-error"){
-            fileField.previousElementSibling.remove();
-        }
+        clearAddAudioFormErrors();
 
         let hasErr = false;
 
@@ -139,9 +135,7 @@ window.onload = () => {
 
         let audioFile = fileField.files[0];
 
-        authorField.value = "";
-        titleField.value = "";
-        fileField.value = "";
+        clearAddAudioFormValues();
 
         let formData = new FormData();
         formData.append("author", author);
@@ -363,4 +357,22 @@ const downloadAudio = e => {
             a.click();
         }
     }
+}
+
+const clearAddAudioFormErrors = () => {
+    if (authorField.previousElementSibling.className == "validation-error"){
+        authorField.previousElementSibling.remove();
+    }
+    if (titleField.previousElementSibling.className == "validation-error"){
+        titleField.previousElementSibling.remove();
+    }
+    if (fileField.previousElementSibling.className == "validation-error"){
+        fileField.previousElementSibling.remove();
+    }
+}
+
+const clearAddAudioFormValues = (author, title, file) => {
+    authorField.value = "";
+    titleField.value = "";
+    fileField.value = "";
 }
