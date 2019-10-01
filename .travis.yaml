@@ -1,0 +1,22 @@
+language: go
+
+go:
+    - 1.12.x
+
+services:
+    - docker
+
+sudo: true
+
+jobs:
+    include:
+        - stage: build
+          script:
+          - go build
+
+          after_success:
+          - bash docker_push.sh
+
+stages:
+    - name: build
+      if: tag ~= /^d(.\d)+$/
