@@ -1,5 +1,5 @@
 # GO ASS
-**GO ASS** - is the self-hosted audio streaming service written on golang.
+**GO ASS** - is a self-hosted audio streaming service written on golang.
 # Install 
  - Install [git](https://git-scm.com/)
  - Install [docker](https://docs.docker.com/install/)
