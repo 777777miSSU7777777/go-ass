@@ -1,5 +1,6 @@
 # GO ASS
 **GO ASS** - is a self-hosted audio streaming service written on golang.
+	It using [hls.js](https://github.com/video-dev/hls.js/) on client side.
 # Install 
  - Install [git](https://git-scm.com/)
  - Install [docker](https://docs.docker.com/install/)
