@@ -3,10 +3,10 @@
 # Install 
  - Install [git](https://git-scm.com/)
  - Install [docker](https://docs.docker.com/install/)
- - Download [ffmpeg](https://www.ffmpeg.org/download.html) binary and put it to /usr/bin
  - Install Make
  - Clone git repository
 `git clone git@github.com:777777miSSU7777777/go-ass.git`
+ - Download [ffmpeg](https://www.ffmpeg.org/download.html) binary and put it to root of cloned repository
 # Run
 Run application via Make:
 
