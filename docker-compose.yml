@@ -11,10 +11,10 @@ services:
     depends_on:
       - db
     volumes: 
-      - ${HOME}/goass/storage:/app/storage
+      - ${HOME}/.goass/storage:/app/storage
     environment: 
       CONNECTION_STRING: 'root:root1234@tcp(db:3306)/goass'
-      STORAGE_LOCATION: './storage'
+      STORAGE_LOCATION: './.storage'
   
   db:
     image: mysql:latest
