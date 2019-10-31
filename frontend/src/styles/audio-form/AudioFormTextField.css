@@ -1,0 +1,5 @@
+#add-audio-form > .audio-form-field > input[type="text"] {
+    border-radius: 10px;
+    border: 1px solid #777;
+    padding: 0.25em;
+}

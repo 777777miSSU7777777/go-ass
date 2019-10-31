@@ -1,0 +1,11 @@
+#add-audio-form > input[type="submit"] {
+    margin-top: 7.5%;
+    border-radius: 10px;
+    background-color: #fff;
+    border: 1px solid #777;
+    padding: 0.5em;
+    margin-bottom: 2%;
+    outline: none;
+    font-size: 1rem;
+    text-align: center;
+}
