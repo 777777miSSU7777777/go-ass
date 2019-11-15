@@ -28,6 +28,7 @@
   "dependencies": {
     "file-loader": "^4.2.0",
     "hls.js": "^0.12.4",
+    "lodash-es": "^4.17.15",
     "react": "^16.10.2",
     "react-dom": "^16.10.2"
   }
