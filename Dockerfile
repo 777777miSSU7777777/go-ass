@@ -27,4 +27,4 @@ COPY --from=front_builder /src/dist /app/frontend
 
 COPY --from=back_builder /src/go-ass /app/
 
-CMD ["sh", "-c", "./go-ass -connection_string=$CONNECTION_STRING -storage_location=$STORAGE_LOCATION"]
+CMD ["sh", "-c", "./go-ass -connection_string=$CONNECTION_STRING -storage_location=$STORAGE_LOCATION -api_only=$API_ONLY"]

@@ -37,10 +37,12 @@ func renderIndex(w http.ResponseWriter, r *http.Request) {
 func main() {
 	var connectionString string
 	var baseLocation string
+	var apiOnly bool
 
 	flag.StringVar(&connectionString, "connection_string", "", "MySQL connection string")
 	homePath := os.Getenv("HOME")
 	flag.StringVar(&baseLocation, "storage_location", homePath+"/goass/storage", "Storage location")
+	flag.BoolVar(&apiOnly, "api_only", true, "Run only api without frontend")
 	flag.Parse()
 
 	db, err := sql.Open("mysql", connectionString)
@@ -71,9 +73,13 @@ func main() {
 	r.Handle("/health-check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}))
-	r.Path("/").HandlerFunc(renderIndex)
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend/"))))
+	if (!apiOnly){
+		r.Path("/").HandlerFunc(renderIndex)
+
+		http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend/"))))
+	}
+
 	http.Handle("/", r)
 
 	fmt.Println("started")
