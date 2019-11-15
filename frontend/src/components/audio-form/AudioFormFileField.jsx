@@ -5,10 +5,10 @@ class AudioFormFileField extends React.Component {
     constructor(props){
         super(props);
         this.fileInput = React.createRef();
+        this.props.setFileInput(this.fileInput.current);
     }
     
     render(){
-        this.props.setFileInput(this.fileInput.current);
         return (
             <div className="audio-form-field">
                 {this.props.error && <p class="validation-error">{this.props.error}</p>}
