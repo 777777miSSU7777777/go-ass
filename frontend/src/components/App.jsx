@@ -19,19 +19,14 @@ class App extends React.Component {
         this.nextTrack = this.nextTrack.bind(this);
         this.setPlayer = this.setPlayer.bind(this);
         this.setPlaying = this.setPlaying.bind(this);
-        this.updateSearchKey = this.updateSearchKey.bind(this);
         this.searchAudio = this.searchAudio.bind(this);
-        this.updateNewAuthor = this.updateNewAuthor.bind(this);
-        this.updateNewTitle = this.updateNewTitle.bind(this);
-        this.updateNewFile = this.updateNewFile.bind(this);
         this.newAudio = this.newAudio.bind(this);
-        this.downloadAudio = this.downloadAudio.bind(this);
         this.deleteAudio = this.deleteAudio.bind(this);
-        this.state = {tracks: [], audioModalState: "closed", isPlaying: false, player: null}
+        this.state = {tracks: [], audioModalState: "closed", isPlaying: false, player: null};
     }
 
     componentWillMount(){
-        fetch("http://localhost:8080/api/audio", {method: "GET"})
+        fetch("/api/audio", {method: "GET"})
         .then(resp => resp.json())
         .then(data => this.setState({tracks: data["audio"]}))
         .catch(error => console.error(error));
@@ -78,51 +73,24 @@ class App extends React.Component {
         this.state.player.play();
     }
 
-    updateSearchKey(e){
-        this.setState({searchKey: e.currentTarget.value});
-    }
-
-    searchAudio(){
-        fetch("http://localhost:8080/api/audio?key=" + this.state.searchKey, {method: "GET"})
+    searchAudio(searchKey){
+        fetch("/api/audio?key=" + searchKey, {method: "GET"})
         .then(resp => resp.json())
         .then(data => {
             this.setState({tracks: data["audio"]});
-            this.clearAudioForm();
-            this.closeAudioFormModal();
         })
         .catch(error => console.error(error));
     }
 
-    updateNewAuthor(e){
-        this.setState({newAuthor: e.currentTarget.value});
-    }
-
-    updateNewTitle(e){
-        this.setState({newTitle: e.currentTarget.value});
-    }
-
-    updateNewFile(e){
-        this.setState({newFile: e.currentTarget.files[0]});
-    }
-
-    newAudio(){
+    newAudio(form){
         let formData = new FormData();
-        formData.append("author", this.state.newAuthor);
-        formData.append("title", this.state.newTitle);
-        formData.append("audiofile", this.state.newFile);
-        fetch("http://localhost:8080/api/audio", {method: "POST", body: formData})
+        formData.append("author", form.author);
+        formData.append("title", form.title);
+        formData.append("audiofile", form.file);
+        fetch("/api/audio", {method: "POST", body: formData})
         .then(resp => resp.json())
         .then(data => this.setState({tracks: [...this.state.tracks, data]}))
         .catch(error => console.error(error));
-    }
-
-    downloadAudio(e){
-        let a = document.createElement("a");
-        let id = e.currentTarget.parentElement.parentElement.id;
-        let {author , title} = this.state.tracks.find(v => v.id == id)
-        a.href = "/media/" +  id + "/download";   
-        a.setAttribute("download", author + " - " + title);
-        a.click();
     }
 
     deleteAudio(e){
@@ -140,7 +108,7 @@ class App extends React.Component {
             <div id="go-ass">
                 <AudioPlayer 
                 setPlayer={this.setPlayer}
-                playingId={this.state.playingId} 
+                track={this.state.tracks.find(e => e.id == this.state.playingId)} 
                 isPlaying={this.state.isPlaying}
                 setPlaying={this.setPlaying}
                 prevTrack={this.prevTrack}
@@ -160,15 +128,11 @@ class App extends React.Component {
                 playAudio={this.playAudio}
                 resumeAudio={this.resumeAudio}
                 pauseAudio={this.pauseAudio}
-                downloadAudio={this.downloadAudio}
                 deleteAudio={this.deleteAudio}
                 />
                 <AudioModalForm 
                 state={this.state.audioModalState} 
                 closeModal={this.closeAudioFormModal} 
-                updateNewAuthor={this.updateNewAuthor}
-                updateNewTitle={this.updateNewTitle}
-                updateNewFile={this.updateNewFile}
                 newAudio={this.newAudio}
                 />
             </div>

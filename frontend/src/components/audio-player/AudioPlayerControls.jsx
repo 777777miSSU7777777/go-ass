@@ -26,7 +26,7 @@ class AudioPlayerControls extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState){
-        if (prevProps.playingId != this.props.playingId) {
+        if (prevProps.playingId != this.props.playingId && this.props.playingId !== undefined) {
             this.initPlayer()
         }
     }

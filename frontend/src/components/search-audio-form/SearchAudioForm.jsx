@@ -6,13 +6,23 @@ import '../../styles/search-audio-form/SearchAudioForm.css';
 class SearchAudioForm extends React.Component {
     constructor(props){
         super(props);
+        this.state = {searchKey: ""};
+        this.onClick = this.onClick.bind(this);
+    }
+
+    updateSearchKey(e){
+        this.setState({searchKey: e.currentTarget.value});
+    }
+
+    onClick(){
+        this.props.searchAudio(this.state.searchKey);
     }
 
     render(){
         return (
             <div id="search-audio-form">
-                <SearchAudioField onChange={this.props.updateSearchKey}/>
-                <SearchAudioButton onClick={this.props.searchAudio}/>
+                <SearchAudioField onChange={this.updateSearchKey}/>
+                <SearchAudioButton onClick={this.onClick}/>
             </div>
         )
     }
