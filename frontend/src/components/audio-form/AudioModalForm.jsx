@@ -2,6 +2,7 @@ import React from 'react';
 import AudioFormTextField from '../audio-form/AudioFormTextField.jsx';
 import AudioFormFileField from '../audio-form/AudioFormFileField.jsx';
 import AudioFormSubmit from '../audio-form/AudioFormSubmit.jsx';
+import { isEmpty } from 'lodash-es';
 import '../../styles/audio-form/AudioModalForm.css';
 
 
@@ -25,43 +26,42 @@ class AudioModalForm extends React.Component {
     onFormSubmit(){
         const errors = this.validate();
         this.setState({errors: errors});
-        let {author, title, file} = errors;
-        if (author === undefined && title === undefined && file === undefined){
+        if (isEmpty(errors)){
             this.props.newAudio(this.state.form);
             this.close();
         }
     }
 
     updateAuthor(e){
-        let author = e.currentTarget.value;
+        const author = e.currentTarget.value;
         this.setState(prevState => {
-            let form = { ...prevState.form };
+            const form = { ...prevState.form };
             form.author = author;
             return { form };
         });
     }
 
     updateTitle(e){
-        let title = e.currentTarget.value;
+        const title = e.currentTarget.value;
         this.setState(prevState => {
-            let form = { ...prevState.form };
+            const form = { ...prevState.form };
             form.title = title;
             return { form };
         });
     }
 
     updateFile(e){
-        let file = e.currentTarget.files[0];
+        const file = e.currentTarget.files[0];
         this.setState(prevState => {
-            let form = { ...prevState.form };
+            const form = { ...prevState.form };
             form.file = file;
             return { form };
         });
     }
 
     validate(){
-        let errors = {};
-        let {author, title, file} = this.state.form;
+        const errors = {};
+        const {author, title, file} = this.state.form;
         if (author.length == 0){
             errors.author = "Author is empty";
         } else if (author.length > 50){
@@ -107,11 +107,11 @@ class AudioModalForm extends React.Component {
     }
 
     render(){
-        let style = {};
-        if (this.props.state == "opened"){
-            style.display = "block";
-        } else if (this.props.state == "closed"){
-            style.display = "none";
+        const style = {};
+        switch(this.props.state){
+            case "opened": style.display = "block";
+            case "closed": style.display = "none";
+            default: ;
         }
         
         return (

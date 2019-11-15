@@ -8,26 +8,29 @@ class AudioElement extends React.Component {
     }
 
     downloadAudio(e){
-        let a = document.createElement("a");
-        let id = e.currentTarget.parentElement.parentElement.id;
-        let {author , title} = this.props;
+        const a = document.createElement("a");
+        const id = e.currentTarget.parentElement.parentElement.id;
+        const {author , title} = this.props;
         a.href = "/media/" +  id + "/download";   
         a.setAttribute("download", author + " - " + title);
         a.click();
     }
     
     render(){
-        let playButton = null;
+        let className, onClick;
         if (this.props.playingId == this.props.id && !this.props.paused){
-            playButton = <div className="pause-button" onClick={this.props.pauseAudio}></div>
+            className = "pause-button";
+            onClick = this.props.pauseAudio
         } else if (this.props.playingId == this.props.id && this.props.paused){
-            playButton = <div className="play-button" onClick={this.props.resumeAudio}></div>
+            className = "play-button";
+            onClick = this.props.resumeAudio;
         } else if(this.props.playingId != this.props.id){
-            playButton = <div className="play-button" onClick={this.props.playAudio}></div>
+            className = "play-button";
+            onClick = this.props.playAudio;
         }
         return (
             <div className="audio-element" id={this.props.id}>
-                {playButton}
+                <div className={className} onClick={onClick}></div>
                 <p className="audio-info">{this.props.author} - {this.props.title}</p>
             <div className="right-controls">
                 <div className="download-button" onClick={this.downloadAudio}></div>
