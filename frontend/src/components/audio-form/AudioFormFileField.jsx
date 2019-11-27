@@ -5,6 +5,9 @@ class AudioFormFileField extends React.Component {
     constructor(props){
         super(props);
         this.fileInput = React.createRef();
+    }
+
+    componentDidMount(){
         this.props.setFileInput(this.fileInput.current);
     }
     

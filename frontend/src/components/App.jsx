@@ -5,6 +5,7 @@ import SearchAudioForm from './search-audio-form/SearchAudioForm.jsx';
 import AudioList from './audio-list/AudioList.jsx';
 import OpenAudioFormButton from './audio-form/OpenAudioFormButton.jsx';
 import AudioModalForm from './audio-form/AudioModalForm.jsx';
+import ApiClient from '../api/ApiClient.js';
 import '../styles/App.css';
 
 class App extends React.Component {
@@ -26,9 +27,8 @@ class App extends React.Component {
     }
 
     componentWillMount(){
-        fetch("/api/audio", {method: "GET"})
-        .then(resp => resp.json())
-        .then(data => this.setState({tracks: data["audio"]}))
+        ApiClient.instance().getAllAudio()
+        .then(tracks => this.setState({tracks: tracks}))
         .catch(error => console.error(error));
     }
 
@@ -74,11 +74,8 @@ class App extends React.Component {
     }
 
     searchAudio(searchKey){
-        fetch("/api/audio?key=" + searchKey, {method: "GET"})
-        .then(resp => resp.json())
-        .then(data => {
-            this.setState({tracks: data["audio"]});
-        })
+        ApiClient.instance().searchAudioByKey(searchKey)
+        .then(tracks => this.setState({tracks: tracks}))
         .catch(error => console.error(error));
     }
 
@@ -87,20 +84,20 @@ class App extends React.Component {
         formData.append("author", form.author);
         formData.append("title", form.title);
         formData.append("audiofile", form.file);
-        fetch("/api/audio", {method: "POST", body: formData})
-        .then(resp => resp.json())
+        ApiClient.instance().newAudio(formData)
         .then(data => this.setState({tracks: [...this.state.tracks, data]}))
         .catch(error => console.error(error));
     }
 
     deleteAudio(e){
         let id = e.currentTarget.parentElement.parentElement.id;
-        fetch("/api/audio/" + id, {method: "DELETE"})
+        ApiClient.instance().deleteAudioById(id)
         .then(resp => {
             if (resp.status == 200){
                 this.setState({tracks: this.state.tracks.filter(v => v.id != id)});
             }
-        });
+        })
+        .catch(error => console.error(error));
     }
 
     render() {

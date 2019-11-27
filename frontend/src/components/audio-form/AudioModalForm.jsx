@@ -108,10 +108,10 @@ class AudioModalForm extends React.Component {
 
     render(){
         const style = {};
-        switch(this.props.state){
-            case "opened": style.display = "block";
-            case "closed": style.display = "none";
-            default: ;
+        if (this.props.state == "opened"){
+            style.display = "block";
+        } else if (this.props.state == "closed"){
+            style.display = "none";
         }
         
         return (

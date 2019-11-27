@@ -7,6 +7,7 @@ class SearchAudioForm extends React.Component {
     constructor(props){
         super(props);
         this.state = {searchKey: ""};
+        this.updateSearchKey = this.updateSearchKey.bind(this);
         this.onClick = this.onClick.bind(this);
     }
 
