@@ -1,45 +1,82 @@
 import React from 'react';
-import AudioPlayerHeader from './AudioPlayerHeader.jsx';
-import AudioPlayerControls from './AudioPlayerControls.jsx';
 import { isUndefined, isEmpty } from 'lodash-es';
 import '../../styles/audio-player/AudioPlayer.css';
+import Hls from 'hls.js';
 
 class AudioPlayer extends React.Component {
     constructor(props){
         super(props);
+        this.playerRef = React.createRef();
+        this.hls = null;
     }
 
-    componentDidUpdate(){
+    componentDidMount(){
+        this.playerRef.current.onplay = () => {
+            this.props.setPlaying(true);
+        }
+        this.playerRef.current.onpause = () => {
+            this.props.setPlaying(false);
+        }
+        this.playerRef.current.onended = () => {
+            this.props.nextTrack();
+        }
+
+        this.props.setPlayer(this.playerRef.current);
+    }
+
+    componentDidUpdate(prevProps, prevState){
         if (!isUndefined(this.props.track) || !isEmpty(this.props.track)){
             document.title = this.props.track.author + " - " + this.props.track.title;
         }
+
+        if (isUndefined(prevProps.track) && !isUndefined(this.props.track)){
+            this._initPlayer();
+        } else if (!isUndefined(prevProps.track) && !isUndefined(this.props.track)) {
+            if (prevProps.track.id != this.props.track.id) {
+                this._initPlayer();
+            }
+        }
+    }
+
+    componentWillUnmount(){
+        if (this.hls){
+            this.hls.destroy();
+        }
+    }
+
+    _initPlayer(){
+        if (this.hls) {
+            this.hls.destroy();
+        }
+
+        this.hls = new Hls();
+        this.hls.attachMedia(this.playerRef.current);
+        this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+            this.hls.loadSource("/media/" + this.props.track.id + "/stream/");
+            // this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            // });
+            this.playerRef.current.play();
+        });
     }
 
     render(){
-        let id, author, title;
+        let author, title;
         if (!isUndefined(this.props.track)){
-            id = this.props.track.id;
             author = this.props.track.author;
             title = this.props.track.title;
         } else {
-            id = 0;
             author = "Author";
             title = "Title"
         }
         
         return(
             <div id="audio-player">
-                <AudioPlayerHeader 
-                author={author} 
-                title={title} />
-                <AudioPlayerControls 
-                setPlayer={this.props.setPlayer}
-                playingId={id}
-                isPlaying={this.props.isPlaying}
-                setPlaying={this.props.setPlaying}
-                prevTrack={this.props.prevTrack}
-                nextTrack={this.props.nextTrack}
-                />
+                <div id="audio-player-header">{author} - {title}</div>
+                <div id="audio-player-controls">
+                    <div id="prev-audio-button" onClick={this.props.prevTrack}></div>
+                    <div id="next-audio-button" onClick={this.props.nextTrack}></div>
+                    <audio controls id="player" ref={this.playerRef}/>
+                </div>
             </div>
         )
     }
