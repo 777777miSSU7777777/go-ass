@@ -2,6 +2,7 @@ import React from 'react';
 import { isUndefined, isEmpty } from 'lodash-es';
 import '../../styles/audio-player/AudioPlayer.css';
 import Hls from 'hls.js';
+var Config = require('Config');
 
 class AudioPlayer extends React.Component {
     constructor(props){
@@ -52,7 +53,7 @@ class AudioPlayer extends React.Component {
         this.hls = new Hls();
         this.hls.attachMedia(this.playerRef.current);
         this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-            this.hls.loadSource("/media/" + this.props.track.id + "/stream/");
+            this.hls.loadSource(Config.serverUrl + "/media/" + this.props.track.id + "/stream/");
             // this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
             // });
             this.playerRef.current.play();

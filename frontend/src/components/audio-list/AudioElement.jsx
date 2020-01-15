@@ -1,5 +1,6 @@
 import React from 'react';
 import '../../styles/audio-list/AudioElement.css';
+var Config = require('Config');
 
 class AudioElement extends React.Component {
     constructor(props){
@@ -11,7 +12,7 @@ class AudioElement extends React.Component {
         const a = document.createElement("a");
         const id = e.currentTarget.parentElement.parentElement.id;
         const {author , title} = this.props;
-        a.href = "/media/" +  id + "/download";   
+        a.href = Config.serverUrl + "/media/" +  id + "/download";   
         a.setAttribute("download", author + " - " + title);
         a.click();
     }

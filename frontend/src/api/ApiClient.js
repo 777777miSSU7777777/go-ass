@@ -1,5 +1,6 @@
 import { isUndefined } from 'lodash-es/isUndefined';
 import { isNull } from 'lodash-es/isNull';
+var Config = require('Config');
 
 class ApiClient {
     constructor(baseUrl){
@@ -10,7 +11,7 @@ class ApiClient {
 
     static instance(){
         if (!ApiClient._instance){
-            ApiClient._instance = new ApiClient("");
+            ApiClient._instance = new ApiClient(Config.serverUrl);
         }
 
         return ApiClient._instance;
