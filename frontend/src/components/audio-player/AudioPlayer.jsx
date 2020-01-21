@@ -2,41 +2,35 @@ import React from 'react';
 import { isUndefined, isEmpty } from 'lodash-es';
 import '../../styles/audio-player/AudioPlayer.css';
 import Hls from 'hls.js';
+import autoBind from 'react-autobind';
+
 var Config = require('Config');
+
 
 class AudioPlayer extends React.Component {
     constructor(props){
         super(props);
+        autoBind(this);
         this.playerRef = React.createRef();
         this.hls = null;
     }
 
     componentDidMount(){
-        this.playerRef.current.onplay = () => {
-            this.props.setPlaying(true);
-        }
-        this.playerRef.current.onpause = () => {
-            this.props.setPlaying(false);
-        }
-        this.playerRef.current.onended = () => {
-            this.props.nextTrack();
-        }
+        const { dispatchSetPlayer } = this.props;
 
-        this.props.setPlayer(this.playerRef.current);
+        dispatchSetPlayer(this.playerRef.current);
     }
 
-    componentDidUpdate(prevProps, prevState){
-        if (!isUndefined(this.props.track) || !isEmpty(this.props.track)){
-            document.title = this.props.track.author + " - " + this.props.track.title;
+    shouldComponentUpdate(prevProps, prevState){
+        if (this.props.playingId !== prevProps.playingId){
+            return true;
         }
+        return false;
+    }
 
-        if (isUndefined(prevProps.track) && !isUndefined(this.props.track)){
-            this._initPlayer();
-        } else if (!isUndefined(prevProps.track) && !isUndefined(this.props.track)) {
-            if (prevProps.track.id != this.props.track.id) {
-                this._initPlayer();
-            }
-        }
+    componentDidUpdate(prevProps, prevState) {
+        document.title = this.props.track.author + " - " + this.props.track.title;
+        this._initPlayer();
     }
 
     componentWillUnmount(){
@@ -49,15 +43,48 @@ class AudioPlayer extends React.Component {
         if (this.hls) {
             this.hls.destroy();
         }
-
+        
         this.hls = new Hls();
         this.hls.attachMedia(this.playerRef.current);
         this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-            this.hls.loadSource(Config.serverUrl + "/media/" + this.props.track.id + "/stream/");
+            this.hls.loadSource(`${Config.serverUrl}/media/${this.props.playingId}/stream/`);
             // this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
             // });
             this.playerRef.current.play();
         });
+    }
+
+    onPlay() {
+        const { dispatchResume } = this.props;
+
+        dispatchResume();
+    }
+
+    onPause() {
+        const { dispatchPause } = this.props;
+
+        dispatchPause();
+    }
+
+    onEnded() {
+        const { dispatchNextTrack } = this.props;
+
+        dispatchNextTrack();
+        this.props.player.play();
+    }
+
+    prevTrack() {
+        const { dispatchPrevTrack } = this.props;
+        
+        dispatchPrevTrack();
+        this.props.player.play();
+    }
+
+    nextTrack() {
+        const { dispatchNextTrack } = this.props;
+
+        dispatchNextTrack();
+        this.props.player.play();
     }
 
     render(){
@@ -69,14 +96,21 @@ class AudioPlayer extends React.Component {
             author = "Author";
             title = "Title"
         }
-        
+
         return(
             <div id="audio-player">
                 <div id="audio-player-header">{author} - {title}</div>
                 <div id="audio-player-controls">
-                    <div id="prev-audio-button" onClick={this.props.prevTrack}></div>
-                    <div id="next-audio-button" onClick={this.props.nextTrack}></div>
-                    <audio controls id="player" ref={this.playerRef}/>
+                    <div id="prev-audio-button" onClick={this.prevTrack}></div>
+                    <div id="next-audio-button" onClick={this.nextTrack}></div>
+                    <audio 
+                    controls 
+                    id="player" 
+                    ref={this.playerRef} 
+                    onPlay={this.onPlay}
+                    onPause={this.onPause}
+                    onEnded={this.onEnded}
+                    />
                 </div>
             </div>
         )

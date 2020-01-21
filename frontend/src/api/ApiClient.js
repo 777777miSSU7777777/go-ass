@@ -18,27 +18,29 @@ class ApiClient {
     }
 
     getAllAudio(){
-       return fetch(this.baseUrl + "/api/audio", {method: "GET"})
+       return fetch(`${this.baseUrl}/api/audio`, {method: "GET"})
                     .then(resp => resp.json())
                     .then(data => data["audio"]);
     }
 
     searchAudioByKey(key){
-        return fetch(this.baseUrl + "/api/audio?key=" + key, {method: "GET"})
+        return fetch(`${this.baseUrl}/api/audio?key=${key}`, {method: "GET"})
                     .then(resp => resp.json())
                     .then(data => data["audio"]);
     }
 
-    newAudio(formData){
-        return fetch(this.baseUrl + "/api/audio", {method: "POST", body: formData})
+    newAudio(form){
+        const formData = new FormData();
+        formData.append("author", form.author);
+        formData.append("title", form.title);
+        formData.append("audiofile", form.file);
+        return fetch(`${this.baseUrl}/api/audio`, {method: "POST", body: formData})
                     .then(resp => resp.json());
     }
 
     deleteAudioById(id){
-        return fetch(this.baseUrl + "/api/audio/" + id, {method: "DELETE"});
+        return fetch(`${this.baseUrl}/api/audio/${id}`, {method: "DELETE" });
     }
-
-    
 }
 
 export default ApiClient;

@@ -14,7 +14,7 @@ class AudioFormFileField extends React.Component {
     render(){
         return (
             <div className="audio-form-field">
-                {this.props.error && <p class="validation-error">{this.props.error}</p>}
+                {this.props.error && <p className="validation-error">{this.props.error}</p>}
                 <label 
                 htmlFor={this.props.fieldId}
                 >

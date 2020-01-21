@@ -1,90 +1,49 @@
 import React from 'react';
-import AudioFormTextField from '../audio-form/AudioFormTextField.jsx';
-import AudioFormFileField from '../audio-form/AudioFormFileField.jsx';
-import AudioFormSubmit from '../audio-form/AudioFormSubmit.jsx';
-import { isEmpty } from 'lodash-es';
+import AudioFormTextField from './AudioFormTextField.jsx';
+import AudioFormFileField from './AudioFormFileField.jsx';
+import AudioFormSubmit from './AudioFormSubmit.jsx';
 import '../../styles/audio-form/AudioModalForm.css';
+import autoBind from 'react-autobind';
 
 
 class AudioModalForm extends React.Component {
     constructor(props){
         super(props);
-        this.state = {form: {author: "", title: "", file: null}, errors: {}, fileInput: null};
-        this.updateAuthor = this.updateAuthor.bind(this);
-        this.updateTitle = this.updateTitle.bind(this);
-        this.updateFile = this.updateFile.bind(this);
-        this.onFormSubmit = this.onFormSubmit.bind(this);
-        this.validate = this.validate.bind(this);
-        this.reset = this.reset.bind(this);
-        this.setFileInput = this.setFileInput.bind(this);
-        this.resetFile = this.resetFile.bind(this);
-        this.resetErrors = this.resetErrors.bind(this);
-        this.close = this.close.bind(this);
+        autoBind(this);
         this.fileInput = null;
     }
 
-    onFormSubmit(){
-        const errors = this.validate();
-        this.setState({errors: errors});
-        if (isEmpty(errors)){
-            this.props.newAudio(this.state.form);
+    async onFormSubmit(){
+        const { dispatchValidateForm } = this.props;
+        const { dispatchNewTrack } = this.props;
+
+        await dispatchValidateForm();
+
+        if (this.props.isFormValid) {
+            dispatchNewTrack();
             this.close();
         }
     }
 
     updateAuthor(e){
         const author = e.currentTarget.value;
-        this.setState(prevState => {
-            const form = { ...prevState.form };
-            form.author = author;
-            return { form };
-        });
+        const { dispatchUpdateAuthor } = this.props;
+        
+        dispatchUpdateAuthor(author);
     }
 
     updateTitle(e){
         const title = e.currentTarget.value;
-        this.setState(prevState => {
-            const form = { ...prevState.form };
-            form.title = title;
-            return { form };
-        });
+        const { dispatchUpdateTitle } = this.props;
+
+        dispatchUpdateTitle(title)
     }
 
     updateFile(e){
         const file = e.currentTarget.files[0];
-        this.setState(prevState => {
-            const form = { ...prevState.form };
-            form.file = file;
-            return { form };
-        });
-    }
-
-    validate(){
-        const errors = {};
-        const {author, title, file} = this.state.form;
-        if (author.length == 0){
-            errors.author = "Author is empty";
-        } else if (author.length > 50){
-            errors.author = "Author length is more than 50 symbols"
-        }
-
-        if (title.length == 0){
-            errors.title = "Title is empty";
-        } else if (title.length > 50){
-            errors.title = "Title length is more than 50 symbols";
-        }
-
-        if (!file){
-            errors.file = "No file";
-        } else if (file.type != "audio/mp3"){
-            errors.file = "File is not mp3";
-        }
-
-        return errors;
-    }
-
-    reset(){
-        this.setState({form: {author: "", title: "", file: null}});
+        const { dispatchUpdateFile } = this.props;
+        
+        dispatchUpdateFile(file);
     }
 
     resetFile(){
@@ -95,22 +54,18 @@ class AudioModalForm extends React.Component {
         this.fileInput = fileInput;
     }
 
-    resetErrors(){
-        this.setState({errors: {}});
-    }
-
     close(){
-        this.reset();
+        const { dispatchCloseForm } = this.props;
+        
+        dispatchCloseForm();
         this.resetFile();
-        this.resetErrors();
-        this.props.closeModal();
     }
 
     render(){
         const style = {};
-        if (this.props.state == "opened"){
+        if (this.props.opened){
             style.display = "block";
-        } else if (this.props.state == "closed"){
+        } else {
             style.display = "none";
         }
         
@@ -132,25 +87,25 @@ class AudioModalForm extends React.Component {
                             <AudioFormTextField 
                             fieldId="audio-author-field" 
                             label="Author"
-                            value={this.state.form.author}
+                            value={this.props.form.author}
                             onChange={this.updateAuthor}
-                            error={this.state.errors.author}
+                            error={this.props.errors.author}
                             />
                             <AudioFormTextField 
                             fieldId="audio-title-field" 
                             label="Title" 
-                            value={this.state.form.title}
+                            value={this.props.form.title}
                             onChange={this.updateTitle}
-                            error={this.state.errors.title}
+                            error={this.props.errors.title}
                             />
                             <AudioFormFileField 
                             fieldId="audio-file-field" 
                             label="File" 
                             onChange={this.updateFile}
-                            error={this.state.errors.file}
+                            error={this.props.errors.file}
                             setFileInput={this.setFileInput}
                             />
-                            <AudioFormSubmit onClick={this.onFormSubmit}/>
+                            <AudioFormSubmit onClick={this.onFormSubmit} />
                         </div>
                     </div>
                 </div>
@@ -159,4 +114,4 @@ class AudioModalForm extends React.Component {
     }
 }
 
-export default AudioModalForm;
+export default (AudioModalForm);

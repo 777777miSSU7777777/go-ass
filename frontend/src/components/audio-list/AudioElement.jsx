@@ -10,10 +10,9 @@ class AudioElement extends React.Component {
 
     downloadAudio(e){
         const a = document.createElement("a");
-        const id = e.currentTarget.parentElement.parentElement.id;
-        const {author , title} = this.props;
-        a.href = Config.serverUrl + "/media/" +  id + "/download";   
-        a.setAttribute("download", author + " - " + title);
+        const {id, author , title} = this.props;
+        a.href = `${Config.serverUrl}/media/${id}/download`;   
+        a.setAttribute("download", `${author} - ${title}`);
         a.click();
     }
     
