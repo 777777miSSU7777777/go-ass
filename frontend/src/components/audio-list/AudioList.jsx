@@ -48,7 +48,7 @@ class AudioList extends React.Component {
 
     render() {
         return (
-            <div id='audio-list'>
+            <div className='audio-list'>
                 {this.props.tracks.map(track => {
                     return <AudioElement 
                             key={track.id} 

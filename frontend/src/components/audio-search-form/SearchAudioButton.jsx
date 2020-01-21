@@ -8,7 +8,7 @@ class SearchAudioButton extends React.Component {
 
     render() {
         return (
-            <input type='button' id='search-audio-button' value='Search' onClick={this.props.onClick}/>
+            <input type='button' className='search-audio-button' value='Search' onClick={this.props.onClick}/>
         )
     }
 }

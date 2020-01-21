@@ -1,4 +1,4 @@
-#add-audio-form > input[type="submit"] {
+.add-audio-form > input[type="submit"] {
     margin-top: 7.5%;
     border-radius: 10px;
     background-color: #fff;

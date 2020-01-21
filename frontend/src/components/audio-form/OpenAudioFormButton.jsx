@@ -7,7 +7,7 @@ class OpenAudioFormButton extends React.Component {
     }
     render() {
         return (
-            <input type='button' value='+' align='center' id='open-audio-form-modal' onClick={this.props.openModal} />
+            <input type='button' value='+' align='center' className='open-audio-form-modal' onClick={this.props.openModal} />
         )
     }
 }

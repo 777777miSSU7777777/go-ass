@@ -22,7 +22,7 @@ class App extends React.Component {
 
     render() {
         return (
-            <div id='go-ass'>
+            <div className='go-ass'>
                 <AudioPlayer />
                 <SearchAudioForm />
                 <OpenAudioFormButton openModal={this.openAudioFormModal} />

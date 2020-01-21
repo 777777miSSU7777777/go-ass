@@ -23,7 +23,7 @@ class AudioFormFileField extends React.Component {
                 <input
                 ref={this.fileInput}
                 type='file'
-                id={this.props.fieldId} 
+                className={this.props.fieldId} 
                 accept='audio/mp3' 
                 onChange={this.props.onChange}
                 />

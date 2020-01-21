@@ -70,12 +70,11 @@ class AudioModalForm extends React.Component {
         }
         
         return (
-            <div id='audio-form-modal' className='modal' style={style}>
+            <div className='audio-form-modal' className='modal' style={style}>
                 <div className='modal-content'>
                     <div className='modal-header'>
                         <span 
                         className='close-audio-form-modal' 
-                        id='close-audio-form-modal'
                         onClick={this.close}
                         >
                         &times;
@@ -83,23 +82,23 @@ class AudioModalForm extends React.Component {
                         <h2>New Audio</h2>
                     </div>
                     <div className='modal-body'>
-                        <div id='add-audio-form'>
+                        <div className='add-audio-form'>
                             <AudioFormTextField 
-                            fieldId='audio-author-field' 
+                            fieldClass='audio-author-field' 
                             label='Author'
                             value={this.props.form.author}
                             onChange={this.updateAuthor}
                             error={this.props.errors.author}
                             />
                             <AudioFormTextField 
-                            fieldId='audio-title-field' 
+                            fieldClass='audio-title-field' 
                             label='Title'
                             value={this.props.form.title}
                             onChange={this.updateTitle}
                             error={this.props.errors.title}
                             />
                             <AudioFormFileField 
-                            fieldId='audio-file-field' 
+                            className='audio-file-field' 
                             label='File'
                             onChange={this.updateFile}
                             error={this.props.errors.file}

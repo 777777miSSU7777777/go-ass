@@ -33,7 +33,7 @@ class AudioSearchForm extends React.Component {
 
     render() {
         return (
-            <div id='search-audio-form'>
+            <div className='search-audio-form'>
                 <SearchAudioField onChange={this.updateSearchKey} onKeyUp={this.onKeyUp}/>
                 <SearchAudioButton onClick={this.onClick}/>
             </div>

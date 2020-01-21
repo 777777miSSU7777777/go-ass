@@ -8,7 +8,7 @@ class SearchAudioField extends React.Component {
 
     render() {
         return (
-                <input type='text' id='search-audio-field' onChange={this.props.onChange} onKeyUp={this.props.onKeyUp}/>
+                <input type='text' className='search-audio-field' onChange={this.props.onChange} onKeyUp={this.props.onKeyUp}/>
             )
     }
 }

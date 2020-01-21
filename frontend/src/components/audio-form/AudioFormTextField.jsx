@@ -17,7 +17,7 @@ class AudioFormTextField extends React.Component {
                 </label>
                 <input 
                 type='text'
-                id={this.props.fieldId}
+                className={this.props.fieldClass}
                 value={this.props.value}
                 onChange={this.props.onChange}
                 />

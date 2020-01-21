@@ -11,7 +11,7 @@ class AudioFormSubmit extends React.Component {
             <input 
             type='submit' 
             value='Add'
-            id='add-audio-button' 
+            className='add-audio-button' 
             onClick={this.props.onClick} 
             />
         )

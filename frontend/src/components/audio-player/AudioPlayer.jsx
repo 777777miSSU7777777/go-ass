@@ -98,14 +98,14 @@ class AudioPlayer extends React.Component {
         }
 
         return(
-            <div id='audio-player'>
-                <div id='audio-player-header'>{author} - {title}</div>
-                <div id='audio-player-controls'>
-                    <div id='prev-audio-button' onClick={this.prevTrack}></div>
-                    <div id='next-audio-button' onClick={this.nextTrack}></div>
+            <div className='audio-player'>
+                <div className='audio-player-header'>{author} - {title}</div>
+                <div className='audio-player-controls'>
+                    <div className='prev-audio-button' onClick={this.prevTrack}></div>
+                    <div className='next-audio-button' onClick={this.nextTrack}></div>
                     <audio 
                     controls 
-                    id='player' 
+                    className='player' 
                     ref={this.playerRef} 
                     onPlay={this.onPlay}
                     onPause={this.onPause}
