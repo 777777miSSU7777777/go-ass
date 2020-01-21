@@ -6,12 +6,12 @@ class AudioFormSubmit extends React.Component {
         super(props);
     }
 
-    render(){
+    render() {
         return (
             <input 
-            type="submit" 
-            value="Add" 
-            id="add-audio-button" 
+            type='submit' 
+            value='Add'
+            id='add-audio-button' 
             onClick={this.props.onClick} 
             />
         )

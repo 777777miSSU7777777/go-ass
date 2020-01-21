@@ -3,13 +3,13 @@ import { isNull } from 'lodash-es/isNull';
 var Config = require('Config');
 
 class ApiClient {
-    constructor(baseUrl){
+    constructor(baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     static _instance;   
 
-    static instance(){
+    static instance() {
         if (!ApiClient._instance){
             ApiClient._instance = new ApiClient(Config.serverUrl);
         }
@@ -17,19 +17,19 @@ class ApiClient {
         return ApiClient._instance;
     }
 
-    getAllAudio(){
+    getAllAudio() {
        return fetch(`${this.baseUrl}/api/audio`, {method: "GET"})
                     .then(resp => resp.json())
                     .then(data => data["audio"]);
     }
 
-    searchAudioByKey(key){
+    searchAudioByKey(key) {
         return fetch(`${this.baseUrl}/api/audio?key=${key}`, {method: "GET"})
                     .then(resp => resp.json())
                     .then(data => data["audio"]);
     }
 
-    newAudio(form){
+    newAudio(form) {
         const formData = new FormData();
         formData.append("author", form.author);
         formData.append("title", form.title);
@@ -38,7 +38,7 @@ class ApiClient {
                     .then(resp => resp.json());
     }
 
-    deleteAudioById(id){
+    deleteAudioById(id) {
         return fetch(`${this.baseUrl}/api/audio/${id}`, {method: "DELETE" });
     }
 }

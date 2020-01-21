@@ -1,13 +1,13 @@
-const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = ( env, argv ) => {
 	return ({
-		entry: ["babel-polyfill", "./src/index.jsx"],
+		entry: ['babel-polyfill', './src/index.jsx'],
 		output: {
-			path: path.join(__dirname, "/dist"),
-			filename: "index-bundle.js",
-			publicPath: argv.mode === "production" ? "/static/" : ""
+		path: path.join(__dirname, '/dist'),
+		filename: 'index-bundle.js',
+		publicPath: argv.mode === 'production' ? '/static/' : ''
 		},
 		module: {
 			rules: [
@@ -22,16 +22,16 @@ module.exports = ( env, argv ) => {
 				},
 				{
 					test: /\.(png|jpg)$/,
-					loader: "url-loader"
+					loader: 'url-loader'
 				},
-			]
-		},
+				]
+			},
 		externals: {
-			Config: JSON.stringify(argv.mode === "production" ? require("./config.prod.json") : require("./config.dev.json"))
+			Config: JSON.stringify(argv.mode === 'production' ? require('./config.prod.json') : require('./config.dev.json'))
 		},
 		plugins: [
 			new HtmlWebpackPlugin({
-				template: "./src/index.html"
+				template: './src/index.html'
 			})
 		]
 	});

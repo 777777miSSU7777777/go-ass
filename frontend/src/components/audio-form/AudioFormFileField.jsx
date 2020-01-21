@@ -2,19 +2,19 @@ import React from 'react';
 import '../../styles/audio-form/AudioFormFileField.css';
 
 class AudioFormFileField extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         this.fileInput = React.createRef();
     }
 
-    componentDidMount(){
+    componentDidMount() {
         this.props.setFileInput(this.fileInput.current);
     }
     
-    render(){
+    render() {
         return (
-            <div className="audio-form-field">
-                {this.props.error && <p className="validation-error">{this.props.error}</p>}
+            <div className='audio-form-field'>
+                {this.props.error && <p className='validation-error'>{this.props.error}</p>}
                 <label 
                 htmlFor={this.props.fieldId}
                 >
@@ -22,9 +22,9 @@ class AudioFormFileField extends React.Component {
                 </label>
                 <input
                 ref={this.fileInput}
-                type="file"
+                type='file'
                 id={this.props.fieldId} 
-                accept="audio/mp3" 
+                accept='audio/mp3' 
                 onChange={this.props.onChange}
                 />
             </div>

@@ -9,7 +9,7 @@ const mapStateToProps = state => ({
     tracks: state.tracks.tracks,
     player: state.audioPlayer.player,
     isPlaying: state.audioPlayer.isPlaying,
-    playingId: state.audioPlayer.playingId
+    playingId: state.audioPlayer.playingId,
 });
 
 const mapDispatchToProps = dispatch => ({

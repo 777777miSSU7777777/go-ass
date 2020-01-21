@@ -10,7 +10,7 @@ const mapStateToProps = state => ({
     opened: state.audioForm.opened,
     form: state.audioForm.form,
     errors: state.audioForm.formErrors,
-    isFormValid: isEmpty(state.audioForm.formErrors)
+    isFormValid: isEmpty(state.audioForm.formErrors),
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -20,7 +20,7 @@ const mapDispatchToProps = dispatch => ({
     dispatchUpdateFile: bindActionCreators(audioFormActions.updateFile, dispatch),
     dispatchValidateForm: bindActionCreators(audioFormActions.validateForm, dispatch),
     dispatchNewTrack: bindActionCreators(tracksActions.newTrack, dispatch),
-    dispatchCloseForm: bindActionCreators(audioFormActions.closeForm, dispatch)
+    dispatchCloseForm: bindActionCreators(audioFormActions.closeForm, dispatch),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(AudioSearchForm);

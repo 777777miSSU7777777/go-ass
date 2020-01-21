@@ -1,5 +1,4 @@
 import * as types from './actionTypes';
-import { isEmpty } from 'lodash-es/isEmpty';
 
 const initialState = {
     playerRef: null,

@@ -5,7 +5,7 @@ import autoBind from 'react-autobind';
 
 
 class AudioList extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         autoBind(this);
     }
@@ -48,7 +48,7 @@ class AudioList extends React.Component {
 
     render() {
         return (
-            <div id="audio-list">
+            <div id='audio-list'>
                 {this.props.tracks.map(track => {
                     return <AudioElement 
                             key={track.id} 

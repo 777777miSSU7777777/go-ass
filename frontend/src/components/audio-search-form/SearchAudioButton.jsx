@@ -2,13 +2,13 @@ import React from 'react';
 import '../../styles/search-audio-form/SearchAudioButton.css';
 
 class SearchAudioButton extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props);
     }
 
-    render(){
+    render() {
         return (
-            <input type="button" id="search-audio-button" value="Search" onClick={this.props.onClick}/>
+            <input type='button' id='search-audio-button' value='Search' onClick={this.props.onClick}/>
         )
     }
 }

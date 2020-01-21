@@ -7,7 +7,6 @@ const initialState = {
 }
 
 export default function reduce(state = initialState, action = {}) {
-    console.log(action);
     switch(action.type) {
         case types.OPEN_FORM:
             return { ...state, opened: true };

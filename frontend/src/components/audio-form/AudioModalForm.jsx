@@ -7,13 +7,13 @@ import autoBind from 'react-autobind';
 
 
 class AudioModalForm extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         autoBind(this);
         this.fileInput = null;
     }
 
-    async onFormSubmit(){
+    async onFormSubmit() {
         const { dispatchValidateForm } = this.props;
         const { dispatchNewTrack } = this.props;
 
@@ -25,82 +25,82 @@ class AudioModalForm extends React.Component {
         }
     }
 
-    updateAuthor(e){
+    updateAuthor(e) {
         const author = e.currentTarget.value;
         const { dispatchUpdateAuthor } = this.props;
         
         dispatchUpdateAuthor(author);
     }
 
-    updateTitle(e){
+    updateTitle(e) {
         const title = e.currentTarget.value;
         const { dispatchUpdateTitle } = this.props;
 
         dispatchUpdateTitle(title)
     }
 
-    updateFile(e){
+    updateFile(e) {
         const file = e.currentTarget.files[0];
         const { dispatchUpdateFile } = this.props;
         
         dispatchUpdateFile(file);
     }
 
-    resetFile(){
+    resetFile() {
         this.fileInput.value = null;
     }
 
-    setFileInput(fileInput){
+    setFileInput(fileInput) {
         this.fileInput = fileInput;
     }
 
-    close(){
+    close() {
         const { dispatchCloseForm } = this.props;
         
         dispatchCloseForm();
         this.resetFile();
     }
 
-    render(){
+    render() {
         const style = {};
         if (this.props.opened){
-            style.display = "block";
+            style.display = 'block';
         } else {
-            style.display = "none";
+            style.display = 'none';
         }
         
         return (
-            <div id="audio-form-modal" className="modal" style={style}>
-                <div className="modal-content">
-                    <div className="modal-header">
+            <div id='audio-form-modal' className='modal' style={style}>
+                <div className='modal-content'>
+                    <div className='modal-header'>
                         <span 
-                        className="close-audio-form-modal" 
-                        id="close-audio-form-modal" 
+                        className='close-audio-form-modal' 
+                        id='close-audio-form-modal'
                         onClick={this.close}
                         >
                         &times;
                         </span>
                         <h2>New Audio</h2>
                     </div>
-                    <div className="modal-body">
-                        <div id="add-audio-form">
+                    <div className='modal-body'>
+                        <div id='add-audio-form'>
                             <AudioFormTextField 
-                            fieldId="audio-author-field" 
-                            label="Author"
+                            fieldId='audio-author-field' 
+                            label='Author'
                             value={this.props.form.author}
                             onChange={this.updateAuthor}
                             error={this.props.errors.author}
                             />
                             <AudioFormTextField 
-                            fieldId="audio-title-field" 
-                            label="Title" 
+                            fieldId='audio-title-field' 
+                            label='Title'
                             value={this.props.form.title}
                             onChange={this.updateTitle}
                             error={this.props.errors.title}
                             />
                             <AudioFormFileField 
-                            fieldId="audio-file-field" 
-                            label="File" 
+                            fieldId='audio-file-field' 
+                            label='File'
                             onChange={this.updateFile}
                             error={this.props.errors.file}
                             setFileInput={this.setFileInput}

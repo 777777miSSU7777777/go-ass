@@ -8,20 +8,20 @@ var Config = require('Config');
 
 
 class AudioPlayer extends React.Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         autoBind(this);
         this.playerRef = React.createRef();
         this.hls = null;
     }
 
-    componentDidMount(){
+    componentDidMount() {
         const { dispatchSetPlayer } = this.props;
 
         dispatchSetPlayer(this.playerRef.current);
     }
 
-    shouldComponentUpdate(prevProps, prevState){
+    shouldComponentUpdate(prevProps, prevState) {
         if (this.props.playingId !== prevProps.playingId){
             return true;
         }
@@ -33,13 +33,13 @@ class AudioPlayer extends React.Component {
         this._initPlayer();
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         if (this.hls){
             this.hls.destroy();
         }
     }
 
-    _initPlayer(){
+    _initPlayer() {
         if (this.hls) {
             this.hls.destroy();
         }
@@ -93,19 +93,19 @@ class AudioPlayer extends React.Component {
             author = this.props.track.author;
             title = this.props.track.title;
         } else {
-            author = "Author";
-            title = "Title"
+            author = 'Author';
+            title = 'Title'
         }
 
         return(
-            <div id="audio-player">
-                <div id="audio-player-header">{author} - {title}</div>
-                <div id="audio-player-controls">
-                    <div id="prev-audio-button" onClick={this.prevTrack}></div>
-                    <div id="next-audio-button" onClick={this.nextTrack}></div>
+            <div id='audio-player'>
+                <div id='audio-player-header'>{author} - {title}</div>
+                <div id='audio-player-controls'>
+                    <div id='prev-audio-button' onClick={this.prevTrack}></div>
+                    <div id='next-audio-button' onClick={this.nextTrack}></div>
                     <audio 
                     controls 
-                    id="player" 
+                    id='player' 
                     ref={this.playerRef} 
                     onPlay={this.onPlay}
                     onPause={this.onPause}
