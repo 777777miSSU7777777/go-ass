@@ -1,0 +1,39 @@
+.player {
+    width: 46%;
+    outline: none;
+}
+
+.audio-player-header {
+    text-align: center;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    font-size: 2rem;
+}
+
+.audio-player-controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-left: 1%;
+}
+
+.prev-audio-button {
+    background: url(../../../img/prev-track-button.png);
+    background-repeat: no-repeat;
+    background-size: 100%;
+    margin-bottom: 1%;
+    margin-top: 1%;
+    padding: 1%;
+}
+
+.next-audio-button {
+    background: url(../../../img/next-track-button.png);
+    background-repeat: no-repeat;
+    background-size: 100%;
+    margin-bottom: 1%;
+    margin-top: 1%;
+    padding: 1%;
+}
+
+
+
