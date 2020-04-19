@@ -20,7 +20,7 @@ func NewAPIRouter(r *mux.Router, api API) {
 
 func NewAuthRouter(r *mux.Router, api API) {
 	s := r.PathPrefix("/auth").Subrouter()
-	s.User(middleware.JsonTypeMiddleware)
+	s.Use(middleware.JsonTypeMiddleware)
 
 	s.Methods("POST").Path("/signup").HandlerFunc(api.SignUp)
 }
