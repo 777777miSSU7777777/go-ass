@@ -23,7 +23,7 @@ func NewFileManager(base string) FileManager {
 	return FileManager{base}
 }
 
-func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id int64) error {
+func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id string) error {
 	err := r.ParseMultipartForm(20 << 20)
 	if err != nil {
 		writeError(w, 400, ParseFormError, fmt.Errorf("error while parsing file form: %v", err))
@@ -43,13 +43,13 @@ func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id int64) er
 		return err
 	}
 
-	err = os.MkdirAll(fmt.Sprintf("%s/%d/mp3", m.baseLocation, id), 0755)
+	err = os.MkdirAll(fmt.Sprintf("%s/%s/mp3", m.baseLocation, id), 0755)
 	if err != nil {
 		writeError(w, 500, FileWriteError, fmt.Errorf("error while writing file: %v", err))
 		return err
 	}
 
-	file, err := os.Create(fmt.Sprintf("%s/%d/mp3/audio%d.mp3", m.baseLocation, id, id))
+	file, err := os.Create(fmt.Sprintf("%s/%s/mp3/audio%s.mp3", m.baseLocation, id, id))
 	if err != nil {
 		writeError(w, 500, FileWriteError, fmt.Errorf("error while writing file: %v", err))
 		return err
@@ -71,16 +71,16 @@ func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id int64) er
 	return nil
 }
 
-func (m FileManager) transcodeToHLS(id int64) error {
-	err := os.MkdirAll(fmt.Sprintf("%s/%d/hls", m.baseLocation, id), 0755)
+func (m FileManager) transcodeToHLS(id string) error {
+	err := os.MkdirAll(fmt.Sprintf("%s/%s/hls", m.baseLocation, id), 0755)
 	if err != nil {
 		return err
 	}
 
-	m3u8Dst := fmt.Sprintf("%s/%d/hls/audio%d.m3u8", m.baseLocation, id, id)
-	segDst := fmt.Sprintf("%s/%d/hls/seg%s.ts", m.baseLocation, id, "%02d")
+	m3u8Dst := fmt.Sprintf("%s/%s/hls/audio%s.m3u8", m.baseLocation, id, id)
+	segDst := fmt.Sprintf("%s/%s/hls/seg%s.ts", m.baseLocation, id, "%02d")
 	cmd := exec.Command("ffmpeg",
-		"-i", fmt.Sprintf("%s/%d/mp3/audio%d.mp3", m.baseLocation, id, id),
+		"-i", fmt.Sprintf("%s/%s/mp3/audio%s.mp3", m.baseLocation, id, id),
 		"-vn", "-ac", "2",
 		"-acodec", "aac",
 		"-f", "segment",
@@ -96,8 +96,8 @@ func (m FileManager) transcodeToHLS(id int64) error {
 	return nil
 }
 
-func (m FileManager) Delete(w http.ResponseWriter, id int64) error {
-	err := os.RemoveAll(fmt.Sprintf("%s/%d", m.baseLocation, id))
+func (m FileManager) Delete(w http.ResponseWriter, id string) error {
+	err := os.RemoveAll(fmt.Sprintf("%s/%s", m.baseLocation, id))
 	if err != nil {
 		writeError(w, 400, DeleteAudioError, fmt.Errorf("error while deleting audio: %v", err))
 		return err

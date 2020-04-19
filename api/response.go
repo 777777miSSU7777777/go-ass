@@ -5,7 +5,7 @@ import (
 )
 
 type AddAudioResponse struct {
-	ID     int64  `json:"id"`
+	ID     string `json:"id"`
 	Author string `json:"author"`
 	Title  string `json:"title"`
 }
