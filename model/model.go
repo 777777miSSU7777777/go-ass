@@ -8,9 +8,9 @@ var AudioAuthorEmpty = errors.New("audio author name is empty")
 var AudioTitleEmpty = errors.New("audio title is empty")
 
 type Audio struct {
-	ID     int64  `json:"id"`
-	Author string `json:"author"`
-	Title  string `json:"title"`
+	ID     string `json:"id" bson:"_id,omitempty"`
+	Author string `json:"author" bson:"author"`
+	Title  string `json:"title" bson:"title"`
 }
 
 func ValidateAudio(author, title string) error {

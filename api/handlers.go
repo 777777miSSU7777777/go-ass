@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -45,18 +44,6 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 
 	req.Author, req.Title = r.FormValue("author"), r.FormValue("title")
 
-	lastID, err := a.svc.GetLastAudioID()
-	if err != nil {
-		writeError(w, 500, InternalServerError, fmt.Errorf("internal server error: %v", err))
-		return
-	}
-
-	err = a.m.Upload(w, r, lastID+1)
-	if err != nil {
-		_ = a.m.Delete(w, lastID+1)
-		return
-	}
-
 	resp, err := a.svc.AddAudio(req.Author, req.Title)
 	if err != nil {
 		if err.Error() == model.AudioAuthorEmpty.Error() || err.Error() == model.AudioTitleEmpty.Error() {
@@ -68,6 +55,13 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = a.m.Delete(w, resp.ID)
 		return
+	} else {
+		err = a.m.Upload(w, r, resp.ID)
+		if err != nil {
+			_ = a.svc.DeleteAudioByID(resp.ID)
+			_ = a.m.Delete(w, resp.ID)
+			return
+		}
 	}
 
 	_ = json.NewEncoder(w).Encode(AddAudioResponse{resp.ID, resp.Author, resp.Title})
@@ -105,12 +99,7 @@ func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
 func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req GetAudioByIDRequest
 	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		writeError(w, 400, IDParseError, fmt.Errorf("error while parsing id: %v", err))
-		return
-	}
-	req.ID = id
+	req.ID = vars["id"]
 
 	resp, err := a.svc.GetAudioByID(req.ID)
 	if err != nil {
@@ -128,14 +117,9 @@ func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req UpdateAudioByIDRequest
 	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		writeError(w, 400, IDParseError, fmt.Errorf("error while parsing id: %v", err))
-		return
-	}
-	req.ID = id
+	req.ID = vars["id"]
 
-	err = json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
 		return
@@ -157,14 +141,9 @@ func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 func (a API) DeleteAudioByID(w http.ResponseWriter, r *http.Request) {
 	var req DeleteAudioByIDRequest
 	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		writeError(w, 400, IDParseError, fmt.Errorf("error while parsing id: %v", err))
-		return
-	}
-	req.ID = id
+	req.ID = vars["id"]
 
-	err = a.m.Delete(w, req.ID)
+	err := a.m.Delete(w, req.ID)
 	if err != nil {
 		return
 	}

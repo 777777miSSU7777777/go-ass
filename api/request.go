@@ -6,15 +6,15 @@ type AddAudioRequest struct {
 }
 
 type GetAudioByIDRequest struct {
-	ID int64
+	ID string
 }
 
 type UpdateAudioByIDRequest struct {
-	ID     int64
+	ID     string
 	Author string `json:"author"`
 	Title  string `json:"title"`
 }
 
 type DeleteAudioByIDRequest struct {
-	ID int64
+	ID string
 }

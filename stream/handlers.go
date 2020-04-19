@@ -2,7 +2,6 @@ package stream
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -17,11 +16,7 @@ func NewStreamAPI(m MediaManager) StreamAPI {
 
 func (a StreamAPI) Stream(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		w.WriteHeader(404)
-		return
-	}
+	id := vars["id"]
 
 	seg, ok := vars["seg"]
 	if !ok {
@@ -33,11 +28,7 @@ func (a StreamAPI) Stream(w http.ResponseWriter, r *http.Request) {
 
 func (a StreamAPI) Download(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		w.WriteHeader(404)
-		return
-	}
+	id := vars["id"]
 
 	a.m.ServerMp3(w, r, id)
 }

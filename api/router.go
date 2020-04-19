@@ -13,7 +13,7 @@ func NewAPIRouter(r *mux.Router, api API) {
 
 	s.Methods("POST").Path("/audio").HandlerFunc(api.AddAudio)
 	s.Methods("GET").Path("/audio").HandlerFunc(api.GetAudioList)
-	s.Methods("GET").Path("/audio/{id:[0-9]+}").HandlerFunc(api.GetAudioByID)
-	s.Methods("PUT").Path("/audio/{id:[0-9]+}").HandlerFunc(api.UpdateAudioByID)
-	s.Methods("DELETE", "OPTIONS").Path("/audio/{id:[0-9]+}").HandlerFunc(api.DeleteAudioByID)
+	s.Methods("GET").Path("/audio/{id}").HandlerFunc(api.GetAudioByID)
+	s.Methods("PUT").Path("/audio/{id}").HandlerFunc(api.UpdateAudioByID)
+	s.Methods("DELETE", "OPTIONS").Path("/audio/{id}").HandlerFunc(api.DeleteAudioByID)
 }
