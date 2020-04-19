@@ -160,3 +160,25 @@ func (a API) DeleteAudioByID(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewEncoder(w).Encode(DeleteAudioByIDResponse{})
 }
+
+func (a API) SignUp(w http.ResponseWriter, r *http.Request) {
+	var req SignUpRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	err = a.svc.SignUp(req.Email, req.Name, req.Password)
+	if err != nil {
+		if err.Error() == repository.UserNotFoundError.Error() {
+			writeError(w, 404, NotFoundError, err)
+		} else {
+			writeError(w, 400, ServiceError, err)
+		}
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(SignUpResponse{})
+}

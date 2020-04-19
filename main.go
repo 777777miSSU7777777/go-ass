@@ -74,6 +74,7 @@ func main() {
 	r := mux.NewRouter()
 
 	api.NewAPIRouter(r, apiHandlers)
+	api.NewAuthRouter(r, apiHandlers)
 	stream.NewStreamRouter(r, streamHandlers)
 
 	r.Handle("/health-check", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

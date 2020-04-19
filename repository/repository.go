@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/777777miSSU7777777/go-ass/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,6 +14,7 @@ import (
 
 var AudioNotFoundError = errors.New("audio not found error")
 var TableNotFoundError = errors.New("table not found error")
+var UserNotFoundError = errors.New("user not found error")
 
 type Repository struct {
 	db *mongo.Database
@@ -157,4 +159,51 @@ func (r Repository) DeleteAudioByID(id string) error {
 	}
 
 	return nil
+}
+
+func (r Repository) AddUser(email, name, password string) (string, error) {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		return "", fmt.Errorf("error while hashing user password: %v", err)
+	}
+
+	user := model.User{Email: email, Name: name, Password: string(passwordHash)}
+
+	result, err := r.db.Collection("users").InsertOne(context.TODO(), user)
+	if err != nil {
+		return "", fmt.Errorf("error while adding new user: %v", err)
+	}
+	
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+}
+
+func (r Repository) GetUserByID(id string) (model.User, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return model.User{}, fmt.Errorf("error while parsing user id: %v", err)
+	}
+
+	result := r.db.Collection("users").FindOne(context.TODO(), bson.M{"_id": objectID})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return model.User{}, UserNotFoundError
+		}
+		return model.User{}, fmt.Errorf("get user by id error: %v", err)
+	}
+
+	user := model.User{}
+	err = result.Decode(&user)
+	if err != nil {
+		return model.User{}, fmt.Errorf("error while decoding user: %v", err)
+	}
+
+	return user, nil
+}
+
+func (r Repository) UpdateUserByID(id, name, email, password string) (model.User, error) {
+	return model.User{}, nil	
+}
+
+func (r Repository) DeleteUserByID(id string) (model.User, error) {
+	return model.User{}, nil
 }

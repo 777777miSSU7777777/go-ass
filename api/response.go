@@ -20,3 +20,5 @@ type UpdateAudioByIDResponse AddAudioResponse
 
 type DeleteAudioByIDResponse struct {
 }
+
+type SignUpResponse struct {}

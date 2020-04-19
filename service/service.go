@@ -86,3 +86,18 @@ func (s Service) DeleteAudioByID(id string) error {
 
 	return nil
 }
+
+func (s Service) SignUp(email, name, password string) error {
+	err := model.ValidateUser(email, name, password)
+	if err != nil {
+		return err
+	}
+
+
+	_, err = s.repo.AddUser(email, name, password)
+	if err != nil {
+		return  err
+	}
+
+	return nil
+}

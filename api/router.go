@@ -17,3 +17,10 @@ func NewAPIRouter(r *mux.Router, api API) {
 	s.Methods("PUT").Path("/audio/{id}").HandlerFunc(api.UpdateAudioByID)
 	s.Methods("DELETE", "OPTIONS").Path("/audio/{id}").HandlerFunc(api.DeleteAudioByID)
 }
+
+func NewAuthRouter(r *mux.Router, api API) {
+	s := r.PathPrefix("/auth").Subrouter()
+	s.User(middleware.JsonTypeMiddleware)
+
+	s.Methods("POST").Path("/signup").HandlerFunc(api.SignUp)
+}
