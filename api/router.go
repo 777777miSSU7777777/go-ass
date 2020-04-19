@@ -23,4 +23,7 @@ func NewAuthRouter(r *mux.Router, api API) {
 	s.Use(middleware.JsonTypeMiddleware)
 
 	s.Methods("POST").Path("/signup").HandlerFunc(api.SignUp)
+	s.Methods("POST").Path("/signin").HandlerFunc(api.SignIn)
+	s.Methods("POST").Path("/refresh-token").HandlerFunc(api.RefreshToken)
+	s.Methods("DELETE").Path("/signout").HandlerFunc(api.SignOut)
 }

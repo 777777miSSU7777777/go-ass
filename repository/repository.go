@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/777777miSSU7777777/go-ass/model"
@@ -15,6 +18,9 @@ import (
 var AudioNotFoundError = errors.New("audio not found error")
 var TableNotFoundError = errors.New("table not found error")
 var UserNotFoundError = errors.New("user not found error")
+var RefreshTokenNotFoundError = errors.New("refresh token not found error")
+
+var SecretKey = "NOT A SECRET KEY"
 
 type Repository struct {
 	db *mongo.Database
@@ -22,6 +28,11 @@ type Repository struct {
 
 func New(db *mongo.Database) Repository {
 	return Repository{db}
+}
+
+type JWTPayload struct {
+	ID string `json:"id"`
+	jwt.StandardClaims
 }
 
 func (r Repository) AddAudio(author, title string) (string, error) {
@@ -173,7 +184,12 @@ func (r Repository) AddUser(email, name, password string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error while adding new user: %v", err)
 	}
-	
+
+	result, err = r.db.Collection("refresh_tokens").InsertOne(context.TODO(), model.UserRefreshTokens{UserID: result.InsertedID.(primitive.ObjectID)})
+	if err != nil {
+		return "", fmt.Errorf("error while initializing new user refresh tokens: %v", err)
+	}
+
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
@@ -200,10 +216,199 @@ func (r Repository) GetUserByID(id string) (model.User, error) {
 	return user, nil
 }
 
+func (r Repository) GetUserByEmail(email string) (model.User, error) {
+	result := r.db.Collection("users").FindOne(context.TODO(), bson.M{"email": email})
+
+	err := result.Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return model.User{}, UserNotFoundError
+		}
+		return model.User{}, fmt.Errorf("error while getting user by email: %v", err)
+	}
+
+	var user model.User
+	err = result.Decode(&user)
+	if err != nil {
+		return model.User{}, fmt.Errorf("error while decoding user: %v", err)
+	}
+
+	return user, nil
+}
+
 func (r Repository) UpdateUserByID(id, name, email, password string) (model.User, error) {
-	return model.User{}, nil	
+	return model.User{}, nil
 }
 
 func (r Repository) DeleteUserByID(id string) (model.User, error) {
 	return model.User{}, nil
+}
+
+func (r Repository) AddRefreshToken(id string) (string, error) {
+	customClaims := JWTPayload{
+		id,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(5184000).Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+	signedToken, err := token.SignedString([]byte(SecretKey))
+	if err != nil {
+		return "", fmt.Errorf("error while signing user refresh token: %v", err)
+	}
+
+	userObjectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return "", fmt.Errorf("error while parsing user id: %v", err)
+	}
+
+	result := r.db.Collection("refresh_tokens").FindOne(context.TODO(), bson.M{"_id": userObjectID})
+
+	err = result.Err()
+	if err != nil {
+		return "", fmt.Errorf("error while getting user refresh tokens: %v", err)
+	}
+
+	var userRefreshTokens model.UserRefreshTokens
+	err = result.Decode(&userRefreshTokens)
+	if err != nil {
+		return "", fmt.Errorf("error while decoding user refresh tokens: %v", err)
+	}
+
+	if len(userRefreshTokens.RefreshTokens) > 5 {
+		userRefreshTokens.RefreshTokens = []string{}
+	}
+
+	userRefreshTokens.RefreshTokens = append(userRefreshTokens.RefreshTokens, signedToken)
+
+	filter := bson.M{"_id": userObjectID}
+	update := bson.M{
+		"$set": bson.M{
+			"refresh_tokens": userRefreshTokens.RefreshTokens,
+		},
+	}
+
+	_, err = r.db.Collection("refresh_tokens").UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return "", fmt.Errorf("error while adding new user refresh token: %v", err)
+	}
+
+	return signedToken, nil
+}
+
+func (r Repository) UpdateRefreshToken(token string) (string, error) {
+	var payload JWTPayload
+	_, err := jwt.ParseWithClaims(token, payload, func(token *jwt.Token) (interface{}, error) {
+		return []byte(SecretKey), nil
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("error while parsing old refresh token: %v", err)
+	}
+
+	filter := bson.M{
+		"refresh_tokens": bson.M{
+			"$in": token,
+		},
+	}
+
+	findResult := r.db.Collection("refresh_tokens").FindOne(context.TODO(), filter)
+
+	err = findResult.Err()
+	if err != nil {
+		return "", fmt.Errorf("error while getting user refresh tokens: %v", err)
+	}
+
+	var userRefreshTokens model.UserRefreshTokens
+	err = findResult.Decode(&userRefreshTokens)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", RefreshTokenNotFoundError
+		}
+		return "", fmt.Errorf("error while decoding user refresh tokens: %v", err)
+	}
+
+	var userRefreshTokenIndex int
+	for index, refreshToken := range userRefreshTokens.RefreshTokens {
+		if refreshToken == refreshToken {
+			userRefreshTokenIndex = index
+			break
+		}
+	}
+
+	customClaims := JWTPayload{
+		payload.ID,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(5184000).Unix(),
+		},
+	}
+
+	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+	signedToken, err := newToken.SignedString([]byte(SecretKey))
+	if err != nil {
+		return "", fmt.Errorf("error while signing user refresh token: %v", err)
+	}
+
+	userRefreshTokens.RefreshTokens[userRefreshTokenIndex] = signedToken
+
+	update := bson.M{
+		"$set": bson.M{
+			"refresh_tokens": userRefreshTokens.RefreshTokens,
+		},
+	}
+
+	_, err = r.db.Collection("refresh_tokens").UpdateOne(context.TODO(), bson.M{"_id": payload.ID}, update)
+	if err != nil {
+		return "", fmt.Errorf("error while updating refresh token: %v", err)
+	}
+
+	return signedToken, nil
+}
+
+func (r Repository) DeleteRefreshToken(token string) error {
+	filter := bson.M{
+		"refresh_tokens": bson.M{
+			"$in": token,
+		},
+	}
+
+	findResult := r.db.Collection("refresh_tokens").FindOne(context.TODO(), filter)
+
+	err := findResult.Err()
+	if err != nil {
+		return fmt.Errorf("error while getting user refresh tokens: %v", err)
+	}
+
+	var userRefreshTokens model.UserRefreshTokens
+	err = findResult.Decode(&userRefreshTokens)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return RefreshTokenNotFoundError
+		}
+		return fmt.Errorf("error while decoding user refresh tokens: %v", err)
+	}
+
+	var userRefreshTokenIndex int
+	for index, refreshToken := range userRefreshTokens.RefreshTokens {
+		if refreshToken == refreshToken {
+			userRefreshTokenIndex = index
+			break
+		}
+	}
+
+	userRefreshTokens.RefreshTokens = append(userRefreshTokens.RefreshTokens[:userRefreshTokenIndex], userRefreshTokens.RefreshTokens[userRefreshTokenIndex+1:]...)
+
+
+	update := bson.M{
+		"$set": bson.M{
+			"refresh_tokens": userRefreshTokens.RefreshTokens,
+		},
+	}
+
+	_, err = r.db.Collection("refresh_tokens").UpdateOne(context.TODO(), bson.M{"_id": userRefreshTokens.UserID}, update)
+	if err != nil {
+		return fmt.Errorf("error while updating refresh token: %v", err)
+	}
+
+	return nil
 }

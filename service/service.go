@@ -1,9 +1,17 @@
 package service
 
 import (
+	"fmt"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	jwt "github.com/dgrijalva/jwt-go"
+
 	"github.com/777777miSSU7777777/go-ass/model"
 	"github.com/777777miSSU7777777/go-ass/repository"
 )
+
+var UserCredentialsAreInvalidError = fmt.Errorf("user credentials are invalid error")
 
 type Service struct {
 	repo repository.Repository
@@ -93,10 +101,82 @@ func (s Service) SignUp(email, name, password string) error {
 		return err
 	}
 
-
 	_, err = s.repo.AddUser(email, name, password)
 	if err != nil {
-		return  err
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) SignIn(email, password string) (string, string, error) {
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return "", "", UserCredentialsAreInvalidError
+		}
+		return "", "", err
+	} else {
+		customClaims := repository.JWTPayload{
+			user.ID,
+			jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(1800).Unix(),
+			},
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+		accessToken, err := token.SignedString([]byte(repository.SecretKey))
+		if err != nil {
+			return "", "", fmt.Errorf("error while signing user refresh token: %v", err)
+		}
+
+		refreshToken, err := s.repo.AddRefreshToken(user.ID)
+		if err != nil {
+			return "", "", err
+		}
+
+		return accessToken, refreshToken, nil
+	}
+}
+
+func (s Service) RefreshToken(token string) (string, string, error) {
+	var payload repository.JWTPayload
+	_, err := jwt.ParseWithClaims(token, payload, func(token *jwt.Token) (interface{}, error) {
+		return []byte(repository.SecretKey), nil
+	})
+
+	if err != nil {
+		return "", "", fmt.Errorf("error while parsing old refresh token: %v", err)
+	}
+
+	customClaims := repository.JWTPayload{
+		payload.ID,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(1800).Unix(),
+		},
+	}
+	unsignedToken := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
+	accessToken, err := unsignedToken.SignedString([]byte(repository.SecretKey))
+	if err != nil {
+		return "", "", fmt.Errorf("error while signing user refresh token: %v", err)
+	}
+
+	refreshToken, err := s.repo.UpdateRefreshToken(token)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (s Service) SignOut(token string) error {
+	err := s.repo.DeleteRefreshToken(token)
+	if err != nil {
+		return err
 	}
 
 	return nil

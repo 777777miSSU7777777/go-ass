@@ -21,4 +21,13 @@ type UpdateAudioByIDResponse AddAudioResponse
 type DeleteAudioByIDResponse struct {
 }
 
-type SignUpResponse struct {}
+type SignUpResponse struct{}
+
+type SignInResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type RefreshTokenResponse SignInResponse
+
+type SignOutResponse struct {}

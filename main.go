@@ -53,7 +53,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	
+
 	defer client.Disconnect(context.TODO())
 
 	err = client.Ping(context.TODO(), nil)

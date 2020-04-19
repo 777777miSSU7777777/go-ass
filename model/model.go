@@ -1,6 +1,7 @@
 package model
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"errors"
 )
 
@@ -31,9 +32,9 @@ func ValidateAudio(author, title string) error {
 }
 
 type User struct {
-	ID string `json:"id" bson:"_id,omitempty"`
-	Email string `json:"email" bson:"email"`
-	Name string `json:"name" bson:"name"`
+	ID       string `json:"id" bson:"_id,omitempty"`
+	Email    string `json:"email" bson:"email"`
+	Name     string `json:"name" bson:"name"`
 	Password string `json:"password" bson:"password"`
 }
 
@@ -43,8 +44,8 @@ func ValidateUser(email, name, password string) error {
 	}
 	if len(email) < 20 && len(email) > 40 {
 		return UserEmailLength
-	} 
-	
+	}
+
 	if name == "" {
 		return UserNameEmpty
 	}
@@ -60,4 +61,9 @@ func ValidateUser(email, name, password string) error {
 	}
 
 	return nil
+}
+
+type UserRefreshTokens struct {
+	UserID        primitive.ObjectID   `json:"userId" bson:"_id,omitempty"`
+	RefreshTokens []string `json:"refreshTokens" bson:"refresh_tokens"`
 }

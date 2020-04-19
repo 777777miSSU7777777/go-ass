@@ -182,3 +182,66 @@ func (a API) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewEncoder(w).Encode(SignUpResponse{})
 }
+
+func (a API) SignIn(w http.ResponseWriter, r *http.Request) {
+	var req SignInRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	accessToken, refreshToken, err := a.svc.SignIn(req.Email, req.Password)
+	if err != nil {
+		if err.Error() == repository.UserNotFoundError.Error() {
+			writeError(w, 404, NotFoundError, err)
+		} else {
+			writeError(w, 400, ServiceError, err)
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+}
+
+func (a API) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var req RefreshTokenRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	accessToken, refreshToken, err := a.svc.RefreshToken(req.RefreshToken)
+	if err != nil {
+		if err.Error() == repository.RefreshTokenNotFoundError.Error() {
+			writeError(w, 404, NotFoundError, err)
+		} else {
+			writeError(w, 400, ServiceError, err)
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+}
+
+func (a API) SignOut(w http.ResponseWriter, r *http.Request) {
+	var req SignOutRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	err = a.svc.SignOut(req.RefreshToken)
+	if err != nil {
+		if err.Error() == repository.RefreshTokenNotFoundError.Error() {
+			writeError(w, 404, NotFoundError, err)
+		} else {
+			writeError(w, 400, ServiceError, err)
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(SignOutResponse{})
+}
