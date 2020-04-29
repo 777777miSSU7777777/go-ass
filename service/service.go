@@ -125,7 +125,7 @@ func (s Service) SignIn(email, password string) (string, string, error) {
 		customClaims := repository.JWTPayload{
 			user.ID,
 			jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(1800).Unix(),
+				ExpiresAt: time.Now().Add(time.Second * time.Duration(1800)).Unix(),
 			},
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
@@ -144,25 +144,26 @@ func (s Service) SignIn(email, password string) (string, string, error) {
 }
 
 func (s Service) RefreshToken(token string) (string, string, error) {
-	var payload repository.JWTPayload
-	_, err := jwt.ParseWithClaims(token, payload, func(token *jwt.Token) (interface{}, error) {
+	jwtToken, err := jwt.ParseWithClaims(token, &repository.JWTPayload{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(repository.SecretKey), nil
 	})
 
 	if err != nil {
-		return "", "", fmt.Errorf("error while parsing old refresh token: %v", err)
+		return "", "", fmt.Errorf("error while parsing refresh token: %v", err)
 	}
+
+	payload := jwtToken.Claims.(*repository.JWTPayload)
 
 	customClaims := repository.JWTPayload{
 		payload.ID,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(1800).Unix(),
+			ExpiresAt: time.Now().Add(time.Second * time.Duration(1800)).Unix(),
 		},
 	}
 	unsignedToken := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
 	accessToken, err := unsignedToken.SignedString([]byte(repository.SecretKey))
 	if err != nil {
-		return "", "", fmt.Errorf("error while signing user refresh token: %v", err)
+		return "", "", fmt.Errorf("error while signing user access token: %v", err)
 	}
 
 	refreshToken, err := s.repo.UpdateRefreshToken(token)
