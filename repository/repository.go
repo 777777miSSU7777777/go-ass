@@ -35,8 +35,8 @@ type JWTPayload struct {
 	jwt.StandardClaims
 }
 
-func (r Repository) AddAudio(author, title string) (string, error) {
-	audio := model.Audio{Author: author, Title: title}
+func (r Repository) AddAudio(author, title, uploadedByID string) (string, error) {
+	audio := model.Audio{Author: author, Title: title, UploadedByID: uploadedByID}
 
 	result, err := r.db.Collection("audio").InsertOne(context.TODO(), audio)
 	if err != nil {

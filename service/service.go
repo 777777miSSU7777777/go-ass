@@ -21,13 +21,13 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (s Service) AddAudio(author, title string) (model.Audio, error) {
+func (s Service) AddAudio(author, title, uploadedByID string) (model.Audio, error) {
 	err := model.ValidateAudio(author, title)
 	if err != nil {
 		return model.Audio{}, err
 	}
 
-	id, err := s.repo.AddAudio(author, title)
+	id, err := s.repo.AddAudio(author, title, uploadedByID)
 	if err != nil {
 		return model.Audio{}, err
 	}

@@ -44,7 +44,7 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 
 	req.Author, req.Title = r.FormValue("author"), r.FormValue("title")
 
-	resp, err := a.svc.AddAudio(req.Author, req.Title)
+	resp, err := a.svc.AddAudio(req.Author, req.Title, r.Context().Value("userID").(string))
 	if err != nil {
 		if err.Error() == model.AudioAuthorEmpty.Error() || err.Error() == model.AudioTitleEmpty.Error() {
 			writeError(w, 400, ValidationError, err)

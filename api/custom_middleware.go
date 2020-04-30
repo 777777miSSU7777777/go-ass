@@ -36,7 +36,7 @@ func JwtAuthMiddleware(next http.Handler) http.Handler {
 
 		if jwtToken.Valid {
 			payload := jwtToken.Claims.(*repository.JWTPayload)
-			ctx := context.WithValue(r.Context(), "userId", payload.ID)
+			ctx := context.WithValue(r.Context(), "userID", payload.ID)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		} else if validationError, ok := err.(*jwt.ValidationError); ok {

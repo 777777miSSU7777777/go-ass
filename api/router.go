@@ -8,6 +8,7 @@ import (
 
 func NewAPIRouter(r *mux.Router, api API) {
 	s := r.PathPrefix("/api").Subrouter()
+	s.Use(JwtAuthMiddleware)
 	s.Use(middleware.JsonTypeMiddleware)
 	s.Use(middleware.AllowCorsMiddleware)
 
