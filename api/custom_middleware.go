@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"context"
 
 	jwt "github.com/dgrijalva/jwt-go"
 
@@ -15,20 +16,28 @@ var TokenExpiredError = "TOKEN EXPIRED ERROR"
 
 func JwtAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		bearerToken := strings.Split(r.Header.Get("authorization"), " ")
+		if (r.Header.Get("authorization") == "") {
+			writeError(w, 401, TokenInvalidError, fmt.Errorf("there is no token"))
+			return
+		}
+		tokenParts := strings.Split(r.Header.Get("authorization"), " ")
 		var accessToken string
-		if len(bearerToken) >= 2 {
-			accessToken = bearerToken[1]
+		if len(tokenParts) >= 2 {
+			accessToken = tokenParts[1]
 		} else {
 			writeError(w, 401, TokenInvalidError, fmt.Errorf("token is invalid error"))
 			return
 		}
 
-		jwtToken, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+		jwtToken, err := jwt.ParseWithClaims(accessToken, &repository.JWTPayload{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(repository.SecretKey), nil
 		})
 
+
 		if jwtToken.Valid {
+			payload := jwtToken.Claims.(*repository.JWTPayload)
+			ctx := context.WithValue(r.Context(), "userId", payload.ID)
+			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		} else if validationError, ok := err.(*jwt.ValidationError); ok {
 			if validationError.Errors&jwt.ValidationErrorMalformed != 0 {
