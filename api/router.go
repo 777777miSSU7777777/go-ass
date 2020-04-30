@@ -7,16 +7,19 @@ import (
 )
 
 func NewAPIRouter(r *mux.Router, api API) {
-	s := r.PathPrefix("/api").Subrouter()
-	s.Use(JwtAuthMiddleware)
-	s.Use(middleware.JsonTypeMiddleware)
-	s.Use(middleware.AllowCorsMiddleware)
+	publicAPI := r.PathPrefix("/api").Subrouter()
+	publicAPI.Use(middleware.JsonTypeMiddleware)
+	publicAPI.Use(middleware.AllowCorsMiddleware)
+	publicAPI.Methods("GET").Path("/audio").HandlerFunc(api.GetAudioList)
+	publicAPI.Methods("GET").Path("/audio/{id}").HandlerFunc(api.GetAudioByID)
 
-	s.Methods("POST").Path("/audio").HandlerFunc(api.AddAudio)
-	s.Methods("GET").Path("/audio").HandlerFunc(api.GetAudioList)
-	s.Methods("GET").Path("/audio/{id}").HandlerFunc(api.GetAudioByID)
-	s.Methods("PUT").Path("/audio/{id}").HandlerFunc(api.UpdateAudioByID)
-	s.Methods("DELETE", "OPTIONS").Path("/audio/{id}").HandlerFunc(api.DeleteAudioByID)
+	authorizedAPI := r.PathPrefix("/api").Subrouter()
+	authorizedAPI.Use(JwtAuthMiddleware)
+	authorizedAPI.Use(middleware.JsonTypeMiddleware)
+	authorizedAPI.Use(middleware.AllowCorsMiddleware)
+	authorizedAPI.Methods("POST").Path("/audio").HandlerFunc(api.AddAudio)
+	authorizedAPI.Methods("PUT").Path("/audio/{id}").HandlerFunc(api.UpdateAudioByID)
+	authorizedAPI.Methods("DELETE", "OPTIONS").Path("/audio/{id}").HandlerFunc(api.DeleteAudioByID)
 }
 
 func NewAuthRouter(r *mux.Router, api API) {
