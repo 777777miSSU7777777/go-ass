@@ -93,7 +93,7 @@ func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = json.NewEncoder(w).Encode(GetAudioListResponse{resp})
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
