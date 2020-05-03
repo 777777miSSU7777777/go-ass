@@ -28,4 +28,4 @@ type SignInResponse struct {
 
 type RefreshTokenResponse SignInResponse
 
-type SignOutResponse struct {}
+type SignOutResponse struct{}

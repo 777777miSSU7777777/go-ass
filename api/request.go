@@ -30,7 +30,7 @@ type SignInRequest struct {
 	Password string `json:"password"`
 }
 
-type RefreshTokenRequest struct{
+type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 

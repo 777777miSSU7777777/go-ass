@@ -1,10 +1,10 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
-	"context"
 
 	jwt "github.com/dgrijalva/jwt-go"
 
@@ -16,7 +16,7 @@ var TokenExpiredError = "TOKEN EXPIRED ERROR"
 
 func JwtAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.Header.Get("authorization") == "") {
+		if r.Header.Get("authorization") == "" {
 			writeError(w, 401, TokenInvalidError, fmt.Errorf("there is no token"))
 			return
 		}
@@ -32,7 +32,6 @@ func JwtAuthMiddleware(next http.Handler) http.Handler {
 		jwtToken, err := jwt.ParseWithClaims(accessToken, &repository.JWTPayload{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(repository.SecretKey), nil
 		})
-
 
 		if jwtToken.Valid {
 			payload := jwtToken.Claims.(*repository.JWTPayload)

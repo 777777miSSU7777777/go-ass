@@ -1,8 +1,9 @@
 package model
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"errors"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var AudioAuthorEmpty = errors.New("audio author name is empty")
@@ -15,9 +16,9 @@ var UserPasswordEmpty = errors.New("user password is empty")
 var UserPasswordLength = errors.New("user password must be between 8 - 40 symbols length")
 
 type Audio struct {
-	ID     string `json:"id" bson:"_id,omitempty"`
-	Author string `json:"author" bson:"author"`
-	Title  string `json:"title" bson:"title"`
+	ID           string `json:"id" bson:"_id,omitempty"`
+	Author       string `json:"author" bson:"author"`
+	Title        string `json:"title" bson:"title"`
 	UploadedByID string `json:"uploadedByID" bson:"uploadedByID"`
 }
 
@@ -65,6 +66,6 @@ func ValidateUser(email, name, password string) error {
 }
 
 type UserRefreshTokens struct {
-	UserID        primitive.ObjectID   `json:"userId" bson:"_id,omitempty"`
-	RefreshTokens []string `json:"refreshTokens" bson:"refresh_tokens"`
+	UserID        primitive.ObjectID `json:"userId" bson:"_id,omitempty"`
+	RefreshTokens []string           `json:"refreshTokens" bson:"refresh_tokens"`
 }
