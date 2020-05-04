@@ -209,3 +209,12 @@ func (s Service) DeleteAudioFromUserAudioList(userID, audioID string) (error) {
 
 	return nil
 }
+
+func (s Service) GetAllAudioPlaylists() ([]model.AudioPlaylist, [][]model.Audio, error) {
+	audioPlaylists, audioPlaylistsTracks, err := s.repo.GetAllAudioPlaylists()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return audioPlaylists, audioPlaylistsTracks, nil
+}

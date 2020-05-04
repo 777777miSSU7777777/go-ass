@@ -14,6 +14,7 @@ var UserNameEmpty = errors.New("user name is empty")
 var UserNameLength = errors.New("user name length must be between 5 - 16 symbols length")
 var UserPasswordEmpty = errors.New("user password is empty")
 var UserPasswordLength = errors.New("user password must be between 8 - 40 symbols length")
+var AudioPlaylistTitleEmpty = errors.New("audio playlist title is empty")
 
 type Audio struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
@@ -40,6 +41,7 @@ type User struct {
 	Password string `json:"password" bson:"password"`
 	RefreshTokens []string `json:"refresh_tokens" bson:"refresh_tokens"`
 	AudioList []primitive.ObjectID `json:"audio_list" bson:"audio_list"`
+	Playlists []primitive.ObjectID `json:"playlists" bson:"playlists"`
 }
 
 func ValidateUser(email, name, password string) error {
@@ -62,6 +64,21 @@ func ValidateUser(email, name, password string) error {
 	}
 	if len(password) < 8 && len(password) > 40 {
 		return UserPasswordLength
+	}
+
+	return nil
+}
+
+type AudioPlaylist struct {
+	ID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Title string `json:"title" bson:"title"`
+	Playlist []primitive.ObjectID `json:"playlist" bson:"playlist"`
+	CreatedByID primitive.ObjectID `json:"createdByID" bson:"createdByID"`
+}
+
+func ValidatePlaylist(title string) error {
+	if title == "" {
+		return AudioPlaylistTitleEmpty
 	}
 
 	return nil
