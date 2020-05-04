@@ -36,14 +36,23 @@ type JWTPayload struct {
 }
 
 func (r Repository) AddAudio(author, title, uploadedByID string) (string, error) {
-	audio := model.Audio{Author: author, Title: title, UploadedByID: uploadedByID}
+	uploadedByObjectID, err := primitive.ObjectIDFromHex(uploadedByID)
+	if err != nil {
+		return "", fmt.Errorf("error while parsing audio uploader id: %v", err)
+	}
+	audio := model.Audio{Author: author, Title: title, UploadedByID: uploadedByObjectID}
 
-	result, err := r.db.Collection("audio").InsertOne(context.TODO(), audio)
+	insertResult, err := r.db.Collection("audio").InsertOne(context.TODO(), audio)
 	if err != nil {
 		return "", fmt.Errorf("add audio error: %v", err)
 	}
 
-	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": uploadedByObjectID}, bson.M{"$push": bson.M{"audio_list": insertResult.InsertedID}})
+	if err != nil {
+		return "", fmt.Errorf("add uploaded audio to user list error: %v", err)
+	}
+
+	return insertResult.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
 func (r Repository) GetAllAudio() ([]model.Audio, error) {
@@ -178,16 +187,11 @@ func (r Repository) AddUser(email, name, password string) (string, error) {
 		return "", fmt.Errorf("error while hashing user password: %v", err)
 	}
 
-	user := model.User{Email: email, Name: name, Password: string(passwordHash)}
+	user := model.User{Email: email, Name: name, Password: string(passwordHash), RefreshTokens: []string{}, AudioList: []primitive.ObjectID{}}
 
 	result, err := r.db.Collection("users").InsertOne(context.TODO(), user)
 	if err != nil {
 		return "", fmt.Errorf("error while adding new user: %v", err)
-	}
-
-	result, err = r.db.Collection("refresh_tokens").InsertOne(context.TODO(), model.UserRefreshTokens{UserID: result.InsertedID.(primitive.ObjectID), RefreshTokens: []string{}})
-	if err != nil {
-		return "", fmt.Errorf("error while initializing new user refresh tokens: %v", err)
 	}
 
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
@@ -262,7 +266,7 @@ func (r Repository) AddRefreshToken(id string) (string, error) {
 		return "", fmt.Errorf("error while parsing user id: %v", err)
 	}
 
-	result, err := r.db.Collection("refresh_tokens").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"refresh_tokens": signedToken}})
+	result, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"refresh_tokens": signedToken}})
 
 	if err != nil {
 		return "", fmt.Errorf("error while adding new user refresh token: %v", err)
@@ -298,7 +302,7 @@ func (r Repository) UpdateRefreshToken(token string) (string, error) {
 		return "", fmt.Errorf("error while signing user refresh token: %v", err)
 	}
 
-	result, err := r.db.Collection("refresh_tokens").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$set": bson.M{"refresh_tokens.$": signedToken}})
+	result, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$set": bson.M{"refresh_tokens.$": signedToken}})
 
 	if err != nil {
 		return "", fmt.Errorf("error while updating user refresh token: %v", err)
@@ -312,13 +316,94 @@ func (r Repository) UpdateRefreshToken(token string) (string, error) {
 }
 
 func (r Repository) DeleteRefreshToken(token string) error {
-	result, err := r.db.Collection("refresh_tokens").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$pull": bson.M{"refresh_tokens": token}})
+	result, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$pull": bson.M{"refresh_tokens": token}})
 	if err != nil {
 		return fmt.Errorf("error while deleting refresh token: %v", err)
 	}
 
 	if result.MatchedCount == 0 || result.ModifiedCount == 0 {
 		return RefreshTokenNotFoundError
+	}
+
+	return nil
+}
+
+func (r Repository) GetUserAudioList(userID string) ([]model.Audio, error) {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, fmt.Errorf("error while parsing user id: %v", err)
+	}
+
+	userResult := r.db.Collection("users").FindOne(context.TODO(), bson.M{"_id": userObjectID})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, UserNotFoundError
+		}
+		return nil, fmt.Errorf("get user by id error: %v", err)
+	}
+
+	user := model.User{}
+	err = userResult.Decode(&user)
+	if err != nil {
+		return nil, fmt.Errorf("error while decoding user: %v", err)
+	}
+
+	audioListResult, err := r.db.Collection("audio").Find(context.TODO(), bson.M{"_id": bson.M{"$in": user.AudioList}})
+	if err != nil {
+		// if err != mongo.ErrNoDocuments {
+		// 	return nil, AudioNotFoundError
+		// }
+		return nil, fmt.Errorf("get user audio list error: %v", err)
+	}
+
+	defer audioListResult.Close(context.TODO())
+
+	userAudioList := []model.Audio{}
+	for audioListResult.Next(context.TODO()) {
+		var track model.Audio
+		err = audioListResult.Decode(&track)
+		if err != nil {
+			return nil, fmt.Errorf("error while decoding track: %v", err)
+		}
+		userAudioList = append(userAudioList, track)
+	}
+
+	return userAudioList, nil
+}
+
+func (r Repository) AddAudioToUserAudioList(userID, audioID string) error {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("error while parsing user id: %v", err)
+	}
+
+	audioObjectID, err := primitive.ObjectIDFromHex(audioID)
+	if err != nil {
+		return fmt.Errorf("error while parsing audio id: %v", err)
+	}
+
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"audio_list": audioObjectID}})
+	if err != nil {
+		return fmt.Errorf("error while adding audio to user audio list")
+	}
+
+	return nil
+}
+
+func (r Repository) DeleteAudioFromUserAudioList(userID, audioID string) error {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("error while parsing user id: %v", err)
+	}
+
+	audioObjectID, err := primitive.ObjectIDFromHex(audioID)
+	if err != nil {
+		return fmt.Errorf("error while parsing audio id: %v", err)
+	}
+
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$pull": bson.M{"audio_list": audioObjectID}})
+	if err != nil {
+		return fmt.Errorf("error while deleting audio from user audio list")
 	}
 
 	return nil

@@ -16,10 +16,10 @@ var UserPasswordEmpty = errors.New("user password is empty")
 var UserPasswordLength = errors.New("user password must be between 8 - 40 symbols length")
 
 type Audio struct {
-	ID           string `json:"id" bson:"_id,omitempty"`
+	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Author       string `json:"author" bson:"author"`
 	Title        string `json:"title" bson:"title"`
-	UploadedByID string `json:"uploadedByID" bson:"uploadedByID"`
+	UploadedByID primitive.ObjectID `json:"uploadedByID" bson:"uploadedByID"`
 }
 
 func ValidateAudio(author, title string) error {
@@ -34,10 +34,12 @@ func ValidateAudio(author, title string) error {
 }
 
 type User struct {
-	ID       string `json:"id" bson:"_id,omitempty"`
+	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Email    string `json:"email" bson:"email"`
 	Name     string `json:"name" bson:"name"`
 	Password string `json:"password" bson:"password"`
+	RefreshTokens []string `json:"refresh_tokens" bson:"refresh_tokens"`
+	AudioList []primitive.ObjectID `json:"audio_list" bson:"audio_list"`
 }
 
 func ValidateUser(email, name, password string) error {
@@ -63,9 +65,4 @@ func ValidateUser(email, name, password string) error {
 	}
 
 	return nil
-}
-
-type UserRefreshTokens struct {
-	UserID        primitive.ObjectID `json:"userId" bson:"_id,omitempty"`
-	RefreshTokens []string           `json:"refreshTokens" bson:"refresh_tokens"`
 }

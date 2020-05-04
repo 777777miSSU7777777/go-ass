@@ -20,6 +20,9 @@ func NewAPIRouter(r *mux.Router, api API) {
 	authorizedAPI.Methods("POST").Path("/audio").HandlerFunc(api.AddAudio)
 	authorizedAPI.Methods("PUT").Path("/audio/{id}").HandlerFunc(api.UpdateAudioByID)
 	authorizedAPI.Methods("DELETE", "OPTIONS").Path("/audio/{id}").HandlerFunc(api.DeleteAudioByID)
+	authorizedAPI.Methods("GET").Path("/user-audio").HandlerFunc(api.GetUserAudioList)
+	authorizedAPI.Methods("POST").Path("/user-audio").HandlerFunc(api.AddAudioToUserAudioList)
+	authorizedAPI.Methods("DELETE").Path("/user-audio").HandlerFunc(api.DeleteAudioFromUserAudioList)
 }
 
 func NewAuthRouter(r *mux.Router, api API) {

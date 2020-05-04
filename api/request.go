@@ -35,3 +35,11 @@ type RefreshTokenRequest struct {
 }
 
 type SignOutRequest RefreshTokenRequest
+
+type AddAudioToUserAudioListRequest struct {
+	AudioID string `json:"audioID"`
+}
+
+type DeleteAudioFromUserAudioListRequest AddAudioToUserAudioListRequest
+
+type GetUserAudioListRequest struct {}

@@ -29,3 +29,9 @@ type SignInResponse struct {
 type RefreshTokenResponse SignInResponse
 
 type SignOutResponse struct{}
+
+type AddAudioToUserAudioListResponse struct {}
+
+type DeleteAudioFromUserAudioListResponse struct {}
+
+type GetUserAudioListResponse GetAudioListResponse

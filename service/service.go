@@ -123,7 +123,7 @@ func (s Service) SignIn(email, password string) (string, string, error) {
 		return "", "", err
 	} else {
 		customClaims := repository.JWTPayload{
-			user.ID,
+			user.ID.Hex(),
 			jwt.StandardClaims{
 				ExpiresAt: time.Now().Add(time.Second * time.Duration(1800)).Unix(),
 			},
@@ -134,7 +134,7 @@ func (s Service) SignIn(email, password string) (string, string, error) {
 			return "", "", fmt.Errorf("error while signing user refresh token: %v", err)
 		}
 
-		refreshToken, err := s.repo.AddRefreshToken(user.ID)
+		refreshToken, err := s.repo.AddRefreshToken(user.ID.Hex())
 		if err != nil {
 			return "", "", err
 		}
@@ -176,6 +176,33 @@ func (s Service) RefreshToken(token string) (string, string, error) {
 
 func (s Service) SignOut(token string) error {
 	err := s.repo.DeleteRefreshToken(token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) GetUserAudioList(userID string) ([]model.Audio, error) {
+	userAudioList, err := s.repo.GetUserAudioList(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return userAudioList, nil
+}
+
+func (s Service) AddAudioToUserAudioList(userID, audioID string) (error) {
+	err := s.repo.AddAudioToUserAudioList(userID, audioID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) DeleteAudioFromUserAudioList(userID, audioID string) (error) {
+	err := s.repo.DeleteAudioFromUserAudioList(userID, audioID)
 	if err != nil {
 		return err
 	}

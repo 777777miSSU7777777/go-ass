@@ -44,7 +44,9 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 
 	req.Author, req.Title = r.FormValue("author"), r.FormValue("title")
 
-	resp, err := a.svc.AddAudio(req.Author, req.Title, r.Context().Value("userID").(string))
+	userID := r.Context().Value("userID").(string)
+
+	resp, err := a.svc.AddAudio(req.Author, req.Title, userID)
 	if err != nil {
 		if err.Error() == model.AudioAuthorEmpty.Error() || err.Error() == model.AudioTitleEmpty.Error() {
 			writeError(w, 400, ValidationError, err)
@@ -53,18 +55,18 @@ func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 400, ServiceError, err)
 			fmt.Println(err)
 		}
-		_ = a.m.Delete(w, resp.ID)
+		_ = a.m.Delete(w, resp.ID.Hex())
 		return
 	} else {
-		err = a.m.Upload(w, r, resp.ID)
+		err = a.m.Upload(w, r, resp.ID.Hex())
 		if err != nil {
-			_ = a.svc.DeleteAudioByID(resp.ID)
-			_ = a.m.Delete(w, resp.ID)
+			_ = a.svc.DeleteAudioByID(resp.ID.Hex())
+			_ = a.m.Delete(w, resp.ID.Hex())
 			return
 		}
 	}
 
-	_ = json.NewEncoder(w).Encode(AddAudioResponse{resp.ID, resp.Author, resp.Title})
+	_ = json.NewEncoder(w).Encode(AddAudioResponse{resp.ID.Hex(), resp.Author, resp.Title})
 }
 
 func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +113,7 @@ func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(GetAudioByIDResponse{resp.ID, resp.Author, resp.Title})
+	_ = json.NewEncoder(w).Encode(GetAudioByIDResponse{resp.ID.Hex(), resp.Author, resp.Title})
 }
 
 func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +137,7 @@ func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(UpdateAudioByIDResponse{resp.ID, resp.Author, resp.Title})
+	_ = json.NewEncoder(w).Encode(UpdateAudioByIDResponse{resp.ID.Hex(), resp.Author, resp.Title})
 }
 
 func (a API) DeleteAudioByID(w http.ResponseWriter, r *http.Request) {
@@ -244,4 +246,57 @@ func (a API) SignOut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = json.NewEncoder(w).Encode(SignOutResponse{})
+}
+
+func (a API) GetUserAudioList(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID").(string)
+
+	resp, err := a.svc.GetUserAudioList(userID)
+	if err != nil {
+		if err.Error() == repository.UserNotFoundError.Error() {
+			writeError(w, 404, NotFoundError, err)
+		} else {
+			writeError(w, 400, ServiceError, err)
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) AddAudioToUserAudioList(w http.ResponseWriter, r *http.Request) {
+	var req AddAudioToUserAudioListRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	err = a.svc.AddAudioToUserAudioList(userID, req.AudioID)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+	}
+
+	_ = json.NewEncoder(w).Encode(AddAudioToUserAudioListResponse{})
+}
+
+func (a API) DeleteAudioFromUserAudioList(w http.ResponseWriter, r *http.Request) {
+	var req DeleteAudioFromUserAudioListRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	err = a.svc.DeleteAudioFromUserAudioList(userID, req.AudioID)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+	}
+
+	_ = json.NewEncoder(w).Encode(DeleteAudioFromUserAudioListResponse{})
 }
