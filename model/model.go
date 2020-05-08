@@ -18,8 +18,8 @@ var PlaylistTitleEmpty = errors.New("playlist title is empty")
 
 type Track struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Author       string `json:"author" bson:"author"`
-	Title        string `json:"title" bson:"title"`
+	Author       string             `json:"author" bson:"author"`
+	Title        string             `json:"title" bson:"title"`
 	UploadedByID primitive.ObjectID `json:"uploadedByID" bson:"uploadedByID"`
 }
 
@@ -35,13 +35,13 @@ func ValidateTrack(author, title string) error {
 }
 
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty"`
-	Email    string `bson:"email"`
-	Name     string `bson:"name"`
-	Password string `bson:"password"`
-	RefreshTokens []string `bson:"refresh_tokens"`
-	TrackList []primitive.ObjectID `bson:"tracklist"`
-	Playlists []primitive.ObjectID `bson:"playlists"`
+	ID            primitive.ObjectID   `bson:"_id,omitempty"`
+	Email         string               `bson:"email"`
+	Name          string               `bson:"name"`
+	Password      string               `bson:"password"`
+	RefreshTokens []string             `bson:"refresh_tokens"`
+	TrackList     []primitive.ObjectID `bson:"tracklist"`
+	Playlists     []primitive.ObjectID `bson:"playlists"`
 }
 
 func ValidateUser(email, name, password string) error {
@@ -70,10 +70,10 @@ func ValidateUser(email, name, password string) error {
 }
 
 type Playlist struct {
-	ID primitive.ObjectID `bson:"_id,omitempty"`
-	Title string `bson:"title"`
-	TrackList []primitive.ObjectID `bson:"tracklist"`
-	CreatedByID primitive.ObjectID `bson:"createdByID"`
+	ID          primitive.ObjectID   `bson:"_id,omitempty"`
+	Title       string               `bson:"title"`
+	TrackList   []primitive.ObjectID `bson:"tracklist"`
+	CreatedByID primitive.ObjectID   `bson:"createdByID"`
 }
 
 func ValidatePlaylist(title string) error {

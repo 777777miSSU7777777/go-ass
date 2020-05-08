@@ -1,15 +1,15 @@
 package api
 
-type AddTrackRequest struct {}
+type AddTrackRequest struct{}
 
-type GetTrackByIDRequest struct {}
+type GetTrackByIDRequest struct{}
 
 type UpdateTrackByIDRequest struct {
 	Author string `json:"author"`
 	Title  string `json:"title"`
 }
 
-type DeleteTrackByIDRequest struct {}
+type DeleteTrackByIDRequest struct{}
 
 type SignUpRequest struct {
 	Email    string `json:"email"`

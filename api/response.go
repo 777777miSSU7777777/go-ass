@@ -14,7 +14,7 @@ type GetTrackByIDResponse TrackResponse
 
 type UpdateTrackByIDResponse TrackResponse
 
-type DeleteTrackByIDResponse struct {}
+type DeleteTrackByIDResponse struct{}
 
 type SignUpResponse struct{}
 
@@ -34,8 +34,8 @@ type RemoveTrackFromUserTrackListResponse GetAllTracksResponse
 type GetUserTrackListResponse GetAllTracksResponse
 
 type PlaylistResponse struct {
-	ID        string `json:"id"`
-	Title     string `json:"title"`
+	ID        string          `json:"id"`
+	Title     string          `json:"title"`
 	TrackList []TrackResponse `json:"tracklist"`
 }
 
