@@ -6,42 +6,42 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var AudioAuthorEmpty = errors.New("audio author name is empty")
-var AudioTitleEmpty = errors.New("audio title is empty")
+var TrackAuthorEmpty = errors.New("track author name is empty")
+var TrackTitleEmpty = errors.New("track title is empty")
 var UserEmailEmpty = errors.New("user email is empty")
 var UserEmailLength = errors.New("user email must be between 20 - 40 symbols length")
 var UserNameEmpty = errors.New("user name is empty")
 var UserNameLength = errors.New("user name length must be between 5 - 16 symbols length")
 var UserPasswordEmpty = errors.New("user password is empty")
 var UserPasswordLength = errors.New("user password must be between 8 - 40 symbols length")
-var AudioPlaylistTitleEmpty = errors.New("audio playlist title is empty")
+var PlaylistTitleEmpty = errors.New("playlist title is empty")
 
-type Audio struct {
+type Track struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Author       string `json:"author" bson:"author"`
 	Title        string `json:"title" bson:"title"`
 	UploadedByID primitive.ObjectID `json:"uploadedByID" bson:"uploadedByID"`
 }
 
-func ValidateAudio(author, title string) error {
+func ValidateTrack(author, title string) error {
 	if author == "" {
-		return AudioAuthorEmpty
+		return TrackAuthorEmpty
 	}
 	if title == "" {
-		return AudioTitleEmpty
+		return TrackTitleEmpty
 	}
 
 	return nil
 }
 
 type User struct {
-	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Email    string `json:"email" bson:"email"`
-	Name     string `json:"name" bson:"name"`
-	Password string `json:"password" bson:"password"`
-	RefreshTokens []string `json:"refresh_tokens" bson:"refresh_tokens"`
-	AudioList []primitive.ObjectID `json:"audio_list" bson:"audio_list"`
-	Playlists []primitive.ObjectID `json:"playlists" bson:"playlists"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Email    string `bson:"email"`
+	Name     string `bson:"name"`
+	Password string `bson:"password"`
+	RefreshTokens []string `bson:"refresh_tokens"`
+	TrackList []primitive.ObjectID `bson:"tracklist"`
+	Playlists []primitive.ObjectID `bson:"playlists"`
 }
 
 func ValidateUser(email, name, password string) error {
@@ -69,16 +69,16 @@ func ValidateUser(email, name, password string) error {
 	return nil
 }
 
-type AudioPlaylist struct {
-	ID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Title string `json:"title" bson:"title"`
-	Playlist []primitive.ObjectID `json:"playlist" bson:"playlist"`
-	CreatedByID primitive.ObjectID `json:"createdByID" bson:"createdByID"`
+type Playlist struct {
+	ID primitive.ObjectID `bson:"_id,omitempty"`
+	Title string `bson:"title"`
+	TrackList []primitive.ObjectID `bson:"tracklist"`
+	CreatedByID primitive.ObjectID `bson:"createdByID"`
 }
 
 func ValidatePlaylist(title string) error {
 	if title == "" {
-		return AudioPlaylistTitleEmpty
+		return PlaylistTitleEmpty
 	}
 
 	return nil

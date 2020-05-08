@@ -1,23 +1,15 @@
 package api
 
-type AddAudioRequest struct {
+type AddTrackRequest struct {}
+
+type GetTrackByIDRequest struct {}
+
+type UpdateTrackByIDRequest struct {
 	Author string `json:"author"`
 	Title  string `json:"title"`
 }
 
-type GetAudioByIDRequest struct {
-	ID string
-}
-
-type UpdateAudioByIDRequest struct {
-	ID     string
-	Author string `json:"author"`
-	Title  string `json:"title"`
-}
-
-type DeleteAudioByIDRequest struct {
-	ID string
-}
+type DeleteTrackByIDRequest struct {}
 
 type SignUpRequest struct {
 	Email    string `json:"email"`
@@ -36,25 +28,27 @@ type RefreshTokenRequest struct {
 
 type SignOutRequest RefreshTokenRequest
 
-type AddAudioToUserAudioListRequest struct {
-	AudioID string `json:"audioID"`
+type AddTrackToUserTrackListRequest struct {
+	TrackID string `json:"trackID"`
 }
 
-type DeleteAudioFromUserAudioListRequest AddAudioToUserAudioListRequest
+type RemoveTrackFromUserTrackListRequest AddTrackToUserTrackListRequest
 
-type GetUserAudioListRequest struct{}
+type GetUserTrackListRequest struct{}
 
-type GetAllAudioPlaylistsRequest struct{}
+type GetAllPlaylistsRequest struct{}
 
-type GetAudioPlaylistByIDRequest struct{}
+type GetUserPlaylists struct{}
+
+type GetPlaylistByIDRequest struct{}
 
 type CreateNewPlaylistRequest struct {
 	Title     string   `json:"title"`
 	TrackList []string `json:"tracklist"`
 }
 
-type AddAudioListToPlaylistRequest struct {
+type AddTracksToPlaylistRequest struct {
 	TrackList []string `json:"tracklist"`
 }
 
-type DeleteAudioListFromPlaylistRequest AddAudioListToPlaylistRequest
+type RemoveTracksFromPlaylistRequest AddTracksToPlaylistRequest

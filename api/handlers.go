@@ -39,54 +39,53 @@ func NewApi(svc service.Service, m FileManager) API {
 	return API{svc, m}
 }
 
-func (a API) AddAudio(w http.ResponseWriter, r *http.Request) {
-	var req AddAudioRequest
-
-	req.Author, req.Title = r.FormValue("author"), r.FormValue("title")
+func (a API) AddTrack(w http.ResponseWriter, r *http.Request) {
+	author, title := r.FormValue("author"), r.FormValue("title")
 
 	userID := r.Context().Value("userID").(string)
 
-	resp, err := a.svc.AddAudio(req.Author, req.Title, userID)
+	newTrack, err := a.svc.AddTrack(author, title, userID)
 	if err != nil {
-		if err.Error() == model.AudioAuthorEmpty.Error() || err.Error() == model.AudioTitleEmpty.Error() {
+		if err.Error() == model.TrackAuthorEmpty.Error() || err.Error() == model.TrackTitleEmpty.Error() {
 			writeError(w, 400, ValidationError, err)
 			fmt.Println(err)
 		} else {
 			writeError(w, 400, ServiceError, err)
 			fmt.Println(err)
 		}
-		_ = a.m.Delete(w, resp.ID.Hex())
+		_ = a.m.Delete(w, newTrack.ID.Hex())
 		return
 	} else {
-		err = a.m.Upload(w, r, resp.ID.Hex())
+		err = a.m.Upload(w, r, newTrack.ID.Hex())
 		if err != nil {
-			_ = a.svc.DeleteAudioByID(resp.ID.Hex())
-			_ = a.m.Delete(w, resp.ID.Hex())
+			_ = a.svc.DeleteTrackByID(newTrack.ID.Hex())
+			_ = a.m.Delete(w, newTrack.ID.Hex())
 			return
 		}
 	}
 
-	_ = json.NewEncoder(w).Encode(AddAudioResponse{resp.ID.Hex(), resp.Author, resp.Title})
+	_ = json.NewEncoder(w).Encode(AddTrackResponse{newTrack.ID.Hex(), newTrack.Author, newTrack.Title})
 }
 
-func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
+func (a API) GetAllTracks(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("key")
-	var resp []model.Audio
+	var tracks []model.Track
 	var err error
 	if key != "" {
-		resp, err = a.svc.GetAudioByKey(key)
+		tracks, err = a.svc.GetTracksByKey(key)
 		if err != nil {
-			if err.Error() == repository.AudioNotFoundError.Error() {
+			if err.Error() == repository.TrackNotFoundError.Error() {
 				writeError(w, 400, NotFoundError, err)
 			} else {
 				writeError(w, 400, ServiceError, err)
 			}
 			return
 		}
+
 	} else {
-		resp, err = a.svc.GetAllAudio()
+		tracks, err = a.svc.GetAllTracks()
 		if err != nil {
-			if err.Error() == repository.AudioNotFoundError.Error() {
+			if err.Error() == repository.TrackNotFoundError.Error() {
 				writeError(w, 404, NotFoundError, err)
 			} else {
 				writeError(w, 400, ServiceError, err)
@@ -95,17 +94,21 @@ func (a API) GetAudioList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	resp := GetAllTracksResponse{}
+	for _, track := range tracks {
+		resp = append(resp, TrackResponse{ID: track.ID.Hex(), Author: track.Author, Title: track.Title})
+	}
+
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
-	var req GetAudioByIDRequest
+func (a API) GetTrackByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	req.ID = vars["id"]
+	trackID := vars["id"]
 
-	resp, err := a.svc.GetAudioByID(req.ID)
+	track, err := a.svc.GetTrackByID(trackID)
 	if err != nil {
-		if err.Error() == repository.AudioNotFoundError.Error() {
+		if err.Error() == repository.TrackNotFoundError.Error() {
 			writeError(w, 404, NotFoundError, err)
 		} else {
 			writeError(w, 400, ServiceError, err)
@@ -113,13 +116,13 @@ func (a API) GetAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(GetAudioByIDResponse{resp.ID.Hex(), resp.Author, resp.Title})
+	_ = json.NewEncoder(w).Encode(GetTrackByIDResponse{track.ID.Hex(), track.Author, track.Title})
 }
 
-func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
-	var req UpdateAudioByIDRequest
+func (a API) UpdateTrackByID(w http.ResponseWriter, r *http.Request) {
+	var req UpdateTrackByIDRequest
 	vars := mux.Vars(r)
-	req.ID = vars["id"]
+	trackID := vars["id"]
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -127,9 +130,9 @@ func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := a.svc.UpdateAudioByID(req.ID, req.Author, req.Title)
+	updatedTrack, err := a.svc.UpdateTrackByID(trackID, req.Author, req.Title)
 	if err != nil {
-		if err.Error() == repository.AudioNotFoundError.Error() {
+		if err.Error() == repository.TrackNotFoundError.Error() {
 			writeError(w, 404, NotFoundError, err)
 		} else {
 			writeError(w, 400, ServiceError, err)
@@ -137,22 +140,21 @@ func (a API) UpdateAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(UpdateAudioByIDResponse{resp.ID.Hex(), resp.Author, resp.Title})
+	_ = json.NewEncoder(w).Encode(UpdateTrackByIDResponse{updatedTrack.ID.Hex(), updatedTrack.Author, updatedTrack.Title})
 }
 
-func (a API) DeleteAudioByID(w http.ResponseWriter, r *http.Request) {
-	var req DeleteAudioByIDRequest
+func (a API) DeleteTrackByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	req.ID = vars["id"]
+	trackID := vars["id"]
 
-	err := a.m.Delete(w, req.ID)
+	err := a.m.Delete(w, trackID)
 	if err != nil {
 		return
 	}
 
-	err = a.svc.DeleteAudioByID(req.ID)
+	err = a.svc.DeleteTrackByID(trackID)
 	if err != nil {
-		if err.Error() == repository.AudioNotFoundError.Error() {
+		if err.Error() == repository.TrackNotFoundError.Error() {
 			writeError(w, 404, NotFoundError, err)
 		} else {
 			writeError(w, 400, ServiceError, err)
@@ -160,7 +162,7 @@ func (a API) DeleteAudioByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(DeleteAudioByIDResponse{})
+	_ = json.NewEncoder(w).Encode(DeleteTrackByIDResponse{})
 }
 
 func (a API) SignUp(w http.ResponseWriter, r *http.Request) {
@@ -248,10 +250,10 @@ func (a API) SignOut(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(SignOutResponse{})
 }
 
-func (a API) GetUserAudioList(w http.ResponseWriter, r *http.Request) {
+func (a API) GetUserTrackList(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("userID").(string)
 
-	resp, err := a.svc.GetUserAudioList(userID)
+	userTrackList, err := a.svc.GetUserTrackList(userID)
 	if err != nil {
 		if err.Error() == repository.UserNotFoundError.Error() {
 			writeError(w, 404, NotFoundError, err)
@@ -260,11 +262,16 @@ func (a API) GetUserAudioList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	resp := GetUserTrackListResponse{}
+	for _, track := range userTrackList {
+		resp = append(resp, TrackResponse{ID: track.ID.Hex(), Author: track.Author, Title: track.Title})
+	}
+
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (a API) AddAudioToUserAudioList(w http.ResponseWriter, r *http.Request) {
-	var req AddAudioToUserAudioListRequest
+func (a API) AddTrackToUserTrackList(w http.ResponseWriter, r *http.Request) {
+	var req AddTrackToUserTrackListRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -274,16 +281,16 @@ func (a API) AddAudioToUserAudioList(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value("userID").(string)
 
-	err = a.svc.AddAudioToUserAudioList(userID, req.AudioID)
+	resp, err := a.svc.AddTrackToUserTrackList(userID, req.TrackID)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
 	}
 
-	_ = json.NewEncoder(w).Encode(AddAudioToUserAudioListResponse{})
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (a API) DeleteAudioFromUserAudioList(w http.ResponseWriter, r *http.Request) {
-	var req DeleteAudioFromUserAudioListRequest
+func (a API) RemoveTrackFromUserTrackList(w http.ResponseWriter, r *http.Request) {
+	var req RemoveTrackFromUserTrackListRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -293,28 +300,49 @@ func (a API) DeleteAudioFromUserAudioList(w http.ResponseWriter, r *http.Request
 
 	userID := r.Context().Value("userID").(string)
 
-	err = a.svc.DeleteAudioFromUserAudioList(userID, req.AudioID)
+	resp, err := a.svc.RemoveTrackFromUserTrackList(userID, req.TrackID)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
 	}
 
-	_ = json.NewEncoder(w).Encode(DeleteAudioFromUserAudioListResponse{})
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (a API) GetAllAudioPlaylists(w http.ResponseWriter, r *http.Request) {
-	audioPlaylists, audioPlaylistsTracks, err := a.svc.GetAllAudioPlaylists()
+func (a API) GetAllPlaylists(w http.ResponseWriter, r *http.Request) {
+	playlists, playlistsTracks, err := a.svc.GetAllPlaylists()
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
 		return
 	}
 
-	resp := GetAllAudioPlayListsResponse{}
-	for playlistIndex, playlist := range audioPlaylists {
-		trackList := []AudioResponse{}
-		for _, playlistTrack := range audioPlaylistsTracks[playlistIndex] {
-			trackList = append(trackList, AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title})
+	resp := GetAllPlaylistsResponse{}
+	for playlistIndex, playlist := range playlists {
+		trackList := []TrackResponse{}
+		for _, playlistTrack := range playlistsTracks[playlistIndex] {
+			trackList = append(trackList, TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title})
 		}
-		resp = append(resp, AudioPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title, TrackList: trackList})
+		resp = append(resp, PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title, TrackList: trackList})
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID").(string)
+
+	playlists, playlistsTracks, err := a.svc.GetUserPlaylists(userID)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+		return
+	}
+
+	resp := GetUserPlaylistsResponse{}
+	for playlistIndex, playlist := range playlists {
+		trackList := []TrackResponse{}
+		for _, playlistTrack := range playlistsTracks[playlistIndex] {
+			trackList = append(trackList, TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title})
+		}
+		resp = append(resp, PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title, TrackList: trackList})
 	}
 
 	_ = json.NewEncoder(w).Encode(resp)
@@ -336,65 +364,36 @@ func (a API) CreateNewPlaylist(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, ServiceError, err)
 	}
 
-	resp := AudioPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	resp := PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
 	for _, playlistTrack := range playlistTracks {
-		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
 		resp.TrackList = append(resp.TrackList, track)
 	}
 
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (a API) GetAudioPlaylistByID(w http.ResponseWriter, r *http.Request) {
+func (a API) GetPlaylistByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playlistID := vars["id"]
 
-	playlist, playlistTracks, err := a.svc.GetAudioPlaylistByID(playlistID)
+	playlist, playlistTracks, err := a.svc.GetPlaylistByID(playlistID)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
 		return
 	}
 
-	resp := GetAudioPlaylistByIDResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	resp := GetPlaylistByIDResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
 	for _, playlistTrack := range playlistTracks {
-		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
 		resp.TrackList = append(resp.TrackList, track)
 	}
 
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (a API) AddAudioListToPlaylist(w http.ResponseWriter, r *http.Request) {
-	var req AddAudioListToPlaylistRequest
-
-	vars := mux.Vars(r)
-	playlistID := vars["id"]
-
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
-	}
-
-	userID := r.Context().Value("userID").(string)
-
-	playlist, playlistTracks, err := a.svc.AddAudioListToPlayList(userID, playlistID, req.TrackList)
-	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
-	}
-
-	resp := AddAudioListToPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
-	for _, playlistTrack := range playlistTracks {
-		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
-		resp.TrackList = append(resp.TrackList, track)
-	}
-
-	_ = json.NewEncoder(w).Encode(resp)
-}
-
-func (a API) DeleteAudioListFromPlaylist(w http.ResponseWriter, r *http.Request) {
-	var req DeleteAudioListFromPlaylistRequest
+func (a API) AddTracksToPlaylist(w http.ResponseWriter, r *http.Request) {
+	var req AddTracksToPlaylistRequest
 
 	vars := mux.Vars(r)
 	playlistID := vars["id"]
@@ -407,15 +406,44 @@ func (a API) DeleteAudioListFromPlaylist(w http.ResponseWriter, r *http.Request)
 
 	userID := r.Context().Value("userID").(string)
 
-	playlist, playlistTracks, err := a.svc.DeleteAudioListFromPlayList(userID, playlistID, req.TrackList)
+	playlist, playlistTracks, err := a.svc.AddTracksToPlaylist(userID, playlistID, req.TrackList)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
 		return
 	}
 
-	resp := DeleteAudioListFromPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	resp := AddTracksToPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
 	for _, playlistTrack := range playlistTracks {
-		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		resp.TrackList = append(resp.TrackList, track)
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) RemoveTracksFromPlaylist(w http.ResponseWriter, r *http.Request) {
+	var req RemoveTracksFromPlaylistRequest
+
+	vars := mux.Vars(r)
+	playlistID := vars["id"]
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	playlist, playlistTracks, err := a.svc.RemoveTracksFromPlaylist(userID, playlistID, req.TrackList)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+		return
+	}
+
+	resp := RemoveTracksFromPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	for _, playlistTrack := range playlistTracks {
+		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
 		resp.TrackList = append(resp.TrackList, track)
 	}
 

@@ -1,25 +1,20 @@
 package api
 
-import (
-	"github.com/777777miSSU7777777/go-ass/model"
-)
-
-type AudioResponse struct {
+type TrackResponse struct {
 	ID     string `json:"id"`
 	Author string `json:"author"`
 	Title  string `json:"title"`
 }
 
-type AddAudioResponse AudioResponse
+type AddTrackResponse TrackResponse
 
-type GetAudioListResponse []model.Audio
+type GetAllTracksResponse []TrackResponse
 
-type GetAudioByIDResponse AudioResponse
+type GetTrackByIDResponse TrackResponse
 
-type UpdateAudioByIDResponse AudioResponse
+type UpdateTrackByIDResponse TrackResponse
 
-type DeleteAudioByIDResponse struct {
-}
+type DeleteTrackByIDResponse struct {}
 
 type SignUpResponse struct{}
 
@@ -32,24 +27,26 @@ type RefreshTokenResponse SignInResponse
 
 type SignOutResponse struct{}
 
-type AddAudioToUserAudioListResponse struct{}
+type AddTrackToUserTrackListResponse GetAllTracksResponse
 
-type DeleteAudioFromUserAudioListResponse struct{}
+type RemoveTrackFromUserTrackListResponse GetAllTracksResponse
 
-type GetUserAudioListResponse GetAudioListResponse
+type GetUserTrackListResponse GetAllTracksResponse
 
-type AudioPlaylistResponse struct {
+type PlaylistResponse struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`
-	TrackList []AudioResponse `json:"tracklist"`
+	TrackList []TrackResponse `json:"tracklist"`
 }
 
-type GetAllAudioPlayListsResponse []AudioPlaylistResponse
+type GetAllPlaylistsResponse []PlaylistResponse
 
-type CreateNewPlaylistResponse AudioPlaylistResponse
+type GetUserPlaylistsResponse []PlaylistResponse
 
-type GetAudioPlaylistByIDResponse AudioPlaylistResponse
+type CreateNewPlaylistResponse PlaylistResponse
 
-type AddAudioListToPlaylistResponse AudioPlaylistResponse
+type GetPlaylistByIDResponse PlaylistResponse
 
-type DeleteAudioListFromPlaylistResponse AudioPlaylistResponse
+type AddTracksToPlaylistResponse PlaylistResponse
+
+type RemoveTracksFromPlaylistResponse PlaylistResponse

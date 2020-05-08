@@ -15,11 +15,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var AudioNotFoundError = errors.New("audio not found error")
+var TrackNotFoundError = errors.New("track not found error")
 var TableNotFoundError = errors.New("table not found error")
 var UserNotFoundError = errors.New("user not found error")
 var RefreshTokenNotFoundError = errors.New("refresh token not found error")
-var AudioPlaylistNotFoundError = errors.New("audio playlist not found error")
+var PlaylistNotFoundError = errors.New("playlist not found error")
 
 var SecretKey = "NOT A SECRET KEY"
 
@@ -36,74 +36,74 @@ type JWTPayload struct {
 	jwt.StandardClaims
 }
 
-func (r Repository) AddAudio(author, title, uploadedByID string) (string, error) {
+func (r Repository) AddTrack(author, title, uploadedByID string) (string, error) {
 	uploadedByObjectID, err := primitive.ObjectIDFromHex(uploadedByID)
 	if err != nil {
-		return "", fmt.Errorf("error while parsing audio uploader id: %v", err)
+		return "", fmt.Errorf("add track error: %v", err)
 	}
-	audio := model.Audio{Author: author, Title: title, UploadedByID: uploadedByObjectID}
+	track := model.Track{Author: author, Title: title, UploadedByID: uploadedByObjectID}
 
-	insertResult, err := r.db.Collection("audio").InsertOne(context.TODO(), audio)
+	addTrackResult, err := r.db.Collection("tracks").InsertOne(context.TODO(), track)
 	if err != nil {
-		return "", fmt.Errorf("add audio error: %v", err)
+		return "", fmt.Errorf("add track error: %v", err)
 	}
 
-	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": uploadedByObjectID}, bson.M{"$push": bson.M{"audio_list": insertResult.InsertedID}})
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": uploadedByObjectID}, bson.M{"$push": bson.M{"tracklist": addTrackResult.InsertedID}})
 	if err != nil {
-		return "", fmt.Errorf("add uploaded audio to user list error: %v", err)
+		return "", fmt.Errorf("add track error: %v", err)
 	}
 
-	return insertResult.InsertedID.(primitive.ObjectID).Hex(), nil
+	return addTrackResult.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (r Repository) GetAllAudio() ([]model.Audio, error) {
-	result, err := r.db.Collection("audio").Find(context.TODO(), bson.D{})
+func (r Repository) GetAllTracks() ([]model.Track, error) {
+	getAllTracksResult, err := r.db.Collection("tracks").Find(context.TODO(), bson.D{})
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
-			return nil, AudioNotFoundError
+			return nil, TrackNotFoundError
 		}
-		return nil, fmt.Errorf("get all audio error: %v", err)
+		return nil, fmt.Errorf("get all tracks error: %v", err)
 	}
 
-	defer result.Close(context.TODO())
+	defer getAllTracksResult.Close(context.TODO())
 
-	audio := []model.Audio{}
-	for result.Next(context.TODO()) {
-		var track model.Audio
-		err = result.Decode(&track)
+	allTracks := []model.Track{}
+	for getAllTracksResult.Next(context.TODO()) {
+		var track model.Track
+		err = getAllTracksResult.Decode(&track)
 		if err != nil {
-			return nil, fmt.Errorf("error while decoding track: %v", err)
+			return nil, fmt.Errorf("get all tracks error: %v", err)
 		}
-		audio = append(audio, track)
+		allTracks = append(allTracks, track)
 	}
 
-	return audio, nil
+	return allTracks, nil
 }
 
-func (r Repository) GetAudioByID(id string) (model.Audio, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (r Repository) GetTrackByID(trackID string) (model.Track, error) {
+	trackObjectID, err := primitive.ObjectIDFromHex(trackID)
 	if err != nil {
-		return model.Audio{}, fmt.Errorf("error while parsing audio id: %v", err)
+		return model.Track{}, fmt.Errorf("get track by id error: %v", err)
 	}
 
-	result := r.db.Collection("audio").FindOne(context.TODO(), bson.M{"_id": objectID})
+	getTrackByIDResult := r.db.Collection("tracks").FindOne(context.TODO(), bson.M{"_id": trackObjectID})
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return model.Audio{}, AudioNotFoundError
+			return model.Track{}, TrackNotFoundError
 		}
-		return model.Audio{}, fmt.Errorf("get audio by id error: %v", err)
+		return model.Track{}, fmt.Errorf("get track by id error: %v", err)
 	}
 
-	audio := model.Audio{}
-	err = result.Decode(&audio)
+	track := model.Track{}
+	err = getTrackByIDResult.Decode(&track)
 	if err != nil {
-		return model.Audio{}, fmt.Errorf("error while decoding audio: %v", err)
+		return model.Track{}, fmt.Errorf("get track by id error: %v", err)
 	}
 
-	return audio, nil
+	return track, nil
 }
 
-func (r Repository) GetAudioByKey(key string) ([]model.Audio, error) {
+func (r Repository) GetTracksByKey(key string) ([]model.Track, error) {
 	pattern := fmt.Sprintf("^.*%s.*$", key)
 	keyFilter := bson.M{
 		"$or": bson.A{
@@ -112,71 +112,71 @@ func (r Repository) GetAudioByKey(key string) ([]model.Audio, error) {
 		},
 	}
 
-	result, err := r.db.Collection("audio").Find(context.TODO(), keyFilter)
+	getTrackByKeyResult, err := r.db.Collection("tracks").Find(context.TODO(), keyFilter)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, AudioNotFoundError
+			return nil, TrackNotFoundError
 		}
-		return nil, err
+		return nil, fmt.Errorf("get tracks by key error: %v", err)
 	}
 
-	defer result.Close(context.TODO())
+	defer getTrackByKeyResult.Close(context.TODO())
 
-	audio := []model.Audio{}
-	for result.Next(context.TODO()) {
-		var track model.Audio
-		err = result.Decode(&track)
+	tracksByKey := []model.Track{}
+	for getTrackByKeyResult.Next(context.TODO()) {
+		var track model.Track
+		err = getTrackByKeyResult.Decode(&track)
 		if err != nil {
-			return nil, fmt.Errorf("error while decoding track: %v", err)
+			return nil, fmt.Errorf("get tracks by key error: %v", err)
 		}
-		audio = append(audio, track)
+		tracksByKey = append(tracksByKey, track)
 	}
 
-	if result.Err() != nil {
-		return nil, fmt.Errorf("audio scan error: %v", err)
+	if getTrackByKeyResult.Err() != nil {
+		return nil, fmt.Errorf("get tracks by key error: %v", err)
 	}
 
-	return audio, nil
+	return tracksByKey, nil
 }
 
-func (r Repository) UpdateAudioByID(id, author, title string) error {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (r Repository) UpdateTrackByID(trackID, author, title string) error {
+	trackObjectID, err := primitive.ObjectIDFromHex(trackID)
 	if err != nil {
-		return fmt.Errorf("error while parsing audio id: %v", err)
+		return fmt.Errorf("update track by id error: %v", err)
 	}
 
-	filter := bson.M{"_id": objectID}
+	filter := bson.M{"_id": trackObjectID}
 	update := bson.M{
 		"$set": bson.M{
 			"author": author,
 			"title":  title,
 		},
 	}
-	result, err := r.db.Collection("audio").UpdateOne(context.TODO(), filter, update)
+	updateTrackByIDResult, err := r.db.Collection("tracks").UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
 
-	if result.MatchedCount == 0 && result.ModifiedCount == 0 {
-		return AudioNotFoundError
+	if updateTrackByIDResult.MatchedCount == 0 && updateTrackByIDResult.ModifiedCount == 0 {
+		return TrackNotFoundError
 	}
 
 	return nil
 }
 
-func (r Repository) DeleteAudioByID(id string) error {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (r Repository) DeleteTrackByID(trackID string) error {
+	trackObjectID, err := primitive.ObjectIDFromHex(trackID)
 	if err != nil {
-		return fmt.Errorf("error while parsing audio id: %v", err)
+		return fmt.Errorf("delete track by id error: %v", err)
 	}
 
-	result, err := r.db.Collection("audio").DeleteOne(context.TODO(), bson.M{"_id": objectID})
+	deleteTrackByIDResult, err := r.db.Collection("tracks").DeleteOne(context.TODO(), bson.M{"_id": trackObjectID})
 	if err != nil {
-		return fmt.Errorf("delete audio by id error: %v", err)
+		return fmt.Errorf("delete track by id error: %v", err)
 	}
 
-	if result.DeletedCount == 0 {
-		return AudioNotFoundError
+	if deleteTrackByIDResult.DeletedCount == 0 {
+		return TrackNotFoundError
 	}
 
 	return nil
@@ -185,26 +185,26 @@ func (r Repository) DeleteAudioByID(id string) error {
 func (r Repository) AddUser(email, name, password string) (string, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
-		return "", fmt.Errorf("error while hashing user password: %v", err)
+		return "", fmt.Errorf("add user error: %v", err)
 	}
 
-	user := model.User{Email: email, Name: name, Password: string(passwordHash), RefreshTokens: []string{}, AudioList: []primitive.ObjectID{}, Playlists: []primitive.ObjectID{}}
+	user := model.User{Email: email, Name: name, Password: string(passwordHash), RefreshTokens: []string{}, TrackList: []primitive.ObjectID{}, Playlists: []primitive.ObjectID{}}
 
-	result, err := r.db.Collection("users").InsertOne(context.TODO(), user)
+	addUserResult, err := r.db.Collection("users").InsertOne(context.TODO(), user)
 	if err != nil {
-		return "", fmt.Errorf("error while adding new user: %v", err)
+		return "", fmt.Errorf("add user error: %v", err)
 	}
 
-	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+	return addUserResult.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (r Repository) GetUserByID(id string) (model.User, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (r Repository) GetUserByID(userID string) (model.User, error) {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return model.User{}, fmt.Errorf("error while parsing user id: %v", err)
+		return model.User{}, fmt.Errorf("get user by id error: %v", err)
 	}
 
-	result := r.db.Collection("users").FindOne(context.TODO(), bson.M{"_id": objectID})
+	getUserByIDResult := r.db.Collection("users").FindOne(context.TODO(), bson.M{"_id": userObjectID})
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return model.User{}, UserNotFoundError
@@ -213,29 +213,29 @@ func (r Repository) GetUserByID(id string) (model.User, error) {
 	}
 
 	user := model.User{}
-	err = result.Decode(&user)
+	err = getUserByIDResult.Decode(&user)
 	if err != nil {
-		return model.User{}, fmt.Errorf("error while decoding user: %v", err)
+		return model.User{}, fmt.Errorf("get user by id error: %v", err)
 	}
 
 	return user, nil
 }
 
 func (r Repository) GetUserByEmail(email string) (model.User, error) {
-	result := r.db.Collection("users").FindOne(context.TODO(), bson.M{"email": email})
+	getUserByEmailResult := r.db.Collection("users").FindOne(context.TODO(), bson.M{"email": email})
 
-	err := result.Err()
+	err := getUserByEmailResult.Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return model.User{}, UserNotFoundError
 		}
-		return model.User{}, fmt.Errorf("error while getting user by email: %v", err)
+		return model.User{}, fmt.Errorf("get user by email error: %v", err)
 	}
 
 	var user model.User
-	err = result.Decode(&user)
+	err = getUserByEmailResult.Decode(&user)
 	if err != nil {
-		return model.User{}, fmt.Errorf("error while decoding user: %v", err)
+		return model.User{}, fmt.Errorf("get user by email error: %v", err)
 	}
 
 	return user, nil
@@ -259,20 +259,20 @@ func (r Repository) AddRefreshToken(id string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
 	signedToken, err := token.SignedString([]byte(SecretKey))
 	if err != nil {
-		return "", fmt.Errorf("error while signing user refresh token: %v", err)
+		return "", fmt.Errorf("add refresh token error: %v", err)
 	}
 
 	userObjectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return "", fmt.Errorf("error while parsing user id: %v", err)
+		return "", fmt.Errorf("add refresh token error: %v", err)
 	}
 
-	result, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"refresh_tokens": signedToken}})
+	addRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"refresh_tokens": signedToken}})
 
 	if err != nil {
-		return "", fmt.Errorf("error while adding new user refresh token: %v", err)
+		return "", fmt.Errorf("add refresh token error: %v", err)
 	}
-	if result.MatchedCount == 0 || result.ModifiedCount == 0 {
+	if addRefreshTokenResult.MatchedCount == 0 || addRefreshTokenResult.ModifiedCount == 0 {
 		return "", RefreshTokenNotFoundError
 	}
 
@@ -285,7 +285,7 @@ func (r Repository) UpdateRefreshToken(token string) (string, error) {
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("error while parsing refresh token: %v", err)
+		return "", fmt.Errorf("update refresh token error: %v", err)
 	}
 
 	payload := parsedToken.Claims.(*JWTPayload)
@@ -300,16 +300,16 @@ func (r Repository) UpdateRefreshToken(token string) (string, error) {
 	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
 	signedToken, err := newToken.SignedString([]byte(SecretKey))
 	if err != nil {
-		return "", fmt.Errorf("error while signing user refresh token: %v", err)
+		return "", fmt.Errorf("update refresh token error: %v", err)
 	}
 
-	result, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$set": bson.M{"refresh_tokens.$": signedToken}})
+	updateRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$set": bson.M{"refresh_tokens.$": signedToken}})
 
 	if err != nil {
-		return "", fmt.Errorf("error while updating user refresh token: %v", err)
+		return "", fmt.Errorf("update refresh token error: %v", err)
 	}
 
-	if result.MatchedCount == 0 || result.ModifiedCount == 0 {
+	if updateRefreshTokenResult.MatchedCount == 0 || updateRefreshTokenResult.ModifiedCount == 0 {
 		return "", RefreshTokenNotFoundError
 	}
 
@@ -317,22 +317,22 @@ func (r Repository) UpdateRefreshToken(token string) (string, error) {
 }
 
 func (r Repository) DeleteRefreshToken(token string) error {
-	result, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$pull": bson.M{"refresh_tokens": token}})
+	deleteRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$pull": bson.M{"refresh_tokens": token}})
 	if err != nil {
-		return fmt.Errorf("error while deleting refresh token: %v", err)
+		return fmt.Errorf("delete refresh token error: %v", err)
 	}
 
-	if result.MatchedCount == 0 || result.ModifiedCount == 0 {
+	if deleteRefreshTokenResult.MatchedCount == 0 || deleteRefreshTokenResult.ModifiedCount == 0 {
 		return RefreshTokenNotFoundError
 	}
 
 	return nil
 }
 
-func (r Repository) GetUserAudioList(userID string) ([]model.Audio, error) {
+func (r Repository) GetUserTrackList(userID string) ([]model.Track, error) {
 	userObjectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return nil, fmt.Errorf("error while parsing user id: %v", err)
+		return nil, fmt.Errorf("get user track list error: %v", err)
 	}
 
 	userResult := r.db.Collection("users").FindOne(context.TODO(), bson.M{"_id": userObjectID})
@@ -340,186 +340,186 @@ func (r Repository) GetUserAudioList(userID string) ([]model.Audio, error) {
 		if err == mongo.ErrNoDocuments {
 			return nil, UserNotFoundError
 		}
-		return nil, fmt.Errorf("get user by id error: %v", err)
+		return nil, fmt.Errorf("get user track list error: %v", err)
 	}
 
 	user := model.User{}
 	err = userResult.Decode(&user)
 	if err != nil {
-		return nil, fmt.Errorf("error while decoding user: %v", err)
+		return nil, fmt.Errorf("get user track list error: %v", err)
 	}
 
-	audioListResult, err := r.db.Collection("audio").Find(context.TODO(), bson.M{"_id": bson.M{"$in": user.AudioList}})
-	if err != nil {
-		// if err != mongo.ErrNoDocuments {
-		// 	return nil, AudioNotFoundError
-		// }
-		return nil, fmt.Errorf("get user audio list error: %v", err)
-	}
-
-	defer audioListResult.Close(context.TODO())
-
-	userAudioList := []model.Audio{}
-	for audioListResult.Next(context.TODO()) {
-		var track model.Audio
-		err = audioListResult.Decode(&track)
-		if err != nil {
-			return nil, fmt.Errorf("error while decoding track: %v", err)
-		}
-		userAudioList = append(userAudioList, track)
-	}
-
-	return userAudioList, nil
-}
-
-func (r Repository) AddAudioToUserAudioList(userID, audioID string) error {
-	userObjectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return fmt.Errorf("error while parsing user id: %v", err)
-	}
-
-	audioObjectID, err := primitive.ObjectIDFromHex(audioID)
-	if err != nil {
-		return fmt.Errorf("error while parsing audio id: %v", err)
-	}
-
-	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"audio_list": audioObjectID}})
-	if err != nil {
-		return fmt.Errorf("error while adding audio to user audio list: %v", err)
-	}
-
-	return nil
-}
-
-func (r Repository) DeleteAudioFromUserAudioList(userID, audioID string) error {
-	userObjectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return fmt.Errorf("error while parsing user id: %v", err)
-	}
-
-	audioObjectID, err := primitive.ObjectIDFromHex(audioID)
-	if err != nil {
-		return fmt.Errorf("error while parsing audio id: %v", err)
-	}
-
-	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$pull": bson.M{"audio_list": audioObjectID}})
-	if err != nil {
-		return fmt.Errorf("error while deleting audio from user audio list: %v", err)
-	}
-
-	return nil
-}
-
-func (r Repository) CreateNewPlaylist(title, createdByID string, audioIDs []string) (string, error) {
-	createdByObjectID, err := primitive.ObjectIDFromHex(createdByID)
-	if err != nil {
-		return "", fmt.Errorf("error while parsing creator id: %v", err)
-	}
-
-	audioObjectIDs := []primitive.ObjectID{}
-	for _, audioID := range audioIDs {
-		audioObjectID, err := primitive.ObjectIDFromHex(audioID)
-		if err != nil {
-			return "", fmt.Errorf("error while parsing track id: %v", err)
-		}
-		audioObjectIDs = append(audioObjectIDs, audioObjectID)
-	}
-
-	newPlaylist := model.AudioPlaylist{Title: title, Playlist: audioObjectIDs}
-
-	insertResult, err := r.db.Collection("playlists").InsertOne(context.TODO(), newPlaylist)
-	if err != nil {
-		return "", fmt.Errorf("add new audio playlist error: %v", err)
-	}
-
-	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": createdByObjectID}, bson.M{"$push": bson.M{"playlists": insertResult.InsertedID}})
-	if err != nil {
-		return "", fmt.Errorf("add new audio playlist to user playlists error: %v", err)
-	}
-
-	return insertResult.InsertedID.(primitive.ObjectID).Hex(), nil
-}
-
-func (r Repository) GetAllAudioPlaylists() ([]model.AudioPlaylist, [][]model.Audio, error) {
-	playlistsFindResult, err := r.db.Collection("playlists").Find(context.TODO(), bson.D{})
+	getUsertrackListResult, err := r.db.Collection("tracks").Find(context.TODO(), bson.M{"_id": bson.M{"$in": user.TrackList}})
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
-			return nil, nil, AudioPlaylistNotFoundError
+			return nil, TrackNotFoundError
 		}
-		return nil, nil, fmt.Errorf("get all audio playlists error: %v", err)
+		return nil, fmt.Errorf("get user track list error: %v", err)
 	}
 
-	defer playlistsFindResult.Close(context.TODO())
+	defer getUsertrackListResult.Close(context.TODO())
 
-	audioPlaylists := []model.AudioPlaylist{}
-	for playlistsFindResult.Next(context.TODO()) {
-		var audioPlaylist model.AudioPlaylist
-		err = playlistsFindResult.Decode(&audioPlaylist)
+	userTrackList := []model.Track{}
+	for getUsertrackListResult.Next(context.TODO()) {
+		var track model.Track
+		err = getUsertrackListResult.Decode(&track)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get all audio playlists error: %v", err)
+			return nil, fmt.Errorf("get user track list error: %v", err)
 		}
-		audioPlaylists = append(audioPlaylists, audioPlaylist)
+		userTrackList = append(userTrackList, track)
 	}
 
-	audioPlaylistsTracks := [][]model.Audio{}
-	for _, audioPlaylist := range audioPlaylists {
-		audioFindResult, err := r.db.Collection("audio").Find(context.TODO(), bson.M{"_id": bson.M{"$in": audioPlaylist.Playlist}})
-		if err != nil {
-			return nil, nil, fmt.Errorf("get all audio playlists error: %v", err)
-		}
-
-		defer audioFindResult.Close(context.TODO())
-
-		audioPlaylistTracks := []model.Audio{}
-		for audioFindResult.Next(context.TODO()) {
-			var audio model.Audio
-			err = audioFindResult.Decode(&audio)
-			if err != nil {
-				return nil, nil, fmt.Errorf("get all audio playlists error: %v", err)
-			}
-			audioPlaylistTracks = append(audioPlaylistTracks, audio)
-		}
-
-		audioPlaylistsTracks = append(audioPlaylistsTracks, audioPlaylistTracks)
-	}
-
-	return audioPlaylists, audioPlaylistsTracks, nil
+	return userTrackList, nil
 }
 
-func (r Repository) GetAudioPlaylistById(id string) (model.AudioPlaylist, []model.Audio, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
+func (r Repository) AddTrackToUserTrackList(userID, trackID string) error {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return model.AudioPlaylist{}, nil, fmt.Errorf("error while parsing playlist id: %v", err)
+		return fmt.Errorf("add track to user track list error: %v", err)
 	}
 
-	playlistFindResult := r.db.Collection("playlists").FindOne(context.TODO(), bson.M{"_id": objectID})
-	err = playlistFindResult.Err()
+	trackObjectID, err := primitive.ObjectIDFromHex(trackID)
+	if err != nil {
+		return fmt.Errorf("add track to user track list error: %v", err)
+	}
+
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"tracklist": trackObjectID}})
+	if err != nil {
+		return fmt.Errorf("add track to user track list error: %v", err)
+	}
+
+	return nil
+}
+
+func (r Repository) RemoveTrackFromUserTrackList(userID, trackID string) error {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("remove track from user track list error: %v", err)
+	}
+
+	trackObjectID, err := primitive.ObjectIDFromHex(trackID)
+	if err != nil {
+		return fmt.Errorf("remove track from user track list error: %v", err)
+	}
+
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$pull": bson.M{"tracklist": trackObjectID}})
+	if err != nil {
+		return fmt.Errorf("remove track from user track list error: %v", err)
+	}
+
+	return nil
+}
+
+func (r Repository) CreateNewPlaylist(title, createdByID string, trackList []string) (string, error) {
+	createdByObjectID, err := primitive.ObjectIDFromHex(createdByID)
+	if err != nil {
+		return "", fmt.Errorf("create new playlist error: %v", err)
+	}
+
+	trackObjectList := []primitive.ObjectID{}
+	for _, trackID := range trackList {
+		trackOjectID, err := primitive.ObjectIDFromHex(trackID)
+		if err != nil {
+			return "", fmt.Errorf("create new playlist error: %v", err)
+		}
+		trackObjectList = append(trackObjectList, trackOjectID)
+	}
+
+	newPlaylist := model.Playlist{Title: title, TrackList: trackObjectList, CreatedByID: createdByObjectID}
+
+	createNewPlaylistResult, err := r.db.Collection("playlists").InsertOne(context.TODO(), newPlaylist)
+	if err != nil {
+		return "", fmt.Errorf("create new playlist error: %v", err)
+	}
+
+	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": createdByObjectID}, bson.M{"$push": bson.M{"playlists": createNewPlaylistResult.InsertedID}})
+	if err != nil {
+		return "", fmt.Errorf("create new playlist error: %v", err)
+	}
+
+	return createNewPlaylistResult.InsertedID.(primitive.ObjectID).Hex(), nil
+}
+
+func (r Repository) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {
+	getAllPlaylistsResult, err := r.db.Collection("playlists").Find(context.TODO(), bson.D{})
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			return nil, nil, PlaylistNotFoundError
+		}
+		return nil, nil, fmt.Errorf("get all playlists error: %v", err)
+	}
+
+	defer getAllPlaylistsResult.Close(context.TODO())
+
+	playlists := []model.Playlist{}
+	for getAllPlaylistsResult.Next(context.TODO()) {
+		var playlist model.Playlist
+		err = getAllPlaylistsResult.Decode(&playlist)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get all playlists error: %v", err)
+		}
+		playlists = append(playlists, playlist)
+	}
+
+	playlistsTracks := [][]model.Track{}
+	for _, playlist := range playlists {
+		playlistTracksResult, err := r.db.Collection("tracks").Find(context.TODO(), bson.M{"_id": bson.M{"$in": playlist.TrackList}})
+		if err != nil {
+			return nil, nil, fmt.Errorf("get all playlists error: %v", err)
+		}
+
+		defer playlistTracksResult.Close(context.TODO())
+
+		playlistTracks := []model.Track{}
+		for playlistTracksResult.Next(context.TODO()) {
+			var track model.Track
+			err = playlistTracksResult.Decode(&track)
+			if err != nil {
+				return nil, nil, fmt.Errorf("get all playlists error: %v", err)
+			}
+			playlistTracks = append(playlistTracks, track)
+		}
+
+		playlistsTracks = append(playlistsTracks, playlistTracks)
+	}
+
+	return playlists, playlistsTracks, nil
+}
+
+func (r Repository) GetPlaylistByID(playlistID string) (model.Playlist, []model.Track, error) {
+	playlistObjectID, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return model.Playlist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
+	}
+
+	getPlaylistByIDResult := r.db.Collection("playlists").FindOne(context.TODO(), bson.M{"_id": playlistObjectID})
+	err = getPlaylistByIDResult.Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return model.AudioPlaylist{}, nil, AudioPlaylistNotFoundError
+			return model.Playlist{}, nil, PlaylistNotFoundError
 		}
-		return model.AudioPlaylist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
+		return model.Playlist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
 	}
 
-	var playlist model.AudioPlaylist
-	err = playlistFindResult.Decode(&playlist)
+	var playlist model.Playlist
+	err = getPlaylistByIDResult.Decode(&playlist)
 	if err != nil {
-		return model.AudioPlaylist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
+		return model.Playlist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
 	}
 
-	playlistTracksFindResult, err := r.db.Collection("audio").Find(context.TODO(), bson.M{"_id": bson.M{"$in": playlist.Playlist}})
+	playlistTracksResult, err := r.db.Collection("tracks").Find(context.TODO(), bson.M{"_id": bson.M{"$in": playlist.TrackList}})
 	if err != nil {
-		return model.AudioPlaylist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
+		return model.Playlist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
 	}
 
-	defer playlistTracksFindResult.Close(context.TODO())
+	defer playlistTracksResult.Close(context.TODO())
 
-	playlistTracks := []model.Audio{}
-	for playlistTracksFindResult.Next(context.TODO()) {
-		var track model.Audio
-		err = playlistTracksFindResult.Decode(&track)
+	playlistTracks := []model.Track{}
+	for playlistTracksResult.Next(context.TODO()) {
+		var track model.Track
+		err = playlistTracksResult.Decode(&track)
 		if err != nil {
-			return model.AudioPlaylist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
+			return model.Playlist{}, nil, fmt.Errorf("get playlist by id error: %v", err)
 		}
 		playlistTracks = append(playlistTracks, track)
 	}
@@ -527,61 +527,108 @@ func (r Repository) GetAudioPlaylistById(id string) (model.AudioPlaylist, []mode
 	return playlist, playlistTracks, nil
 }
 
-func (r Repository) GetUserPlaylists(id string) ([]model.AudioPlaylist, [][]model.Audio, error) {
-	return nil, nil, nil
-}
-
-func (r Repository) AddAudioListToPlaylist(userID, playlistID string, audioIDs []string) error {
+func (r Repository) GetUserPlaylists(userID string) ([]model.Playlist, [][]model.Track, error) {
 	userObjectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return fmt.Errorf("error while parsing user id: %v", err)
+		return nil, nil, fmt.Errorf("get user playlists error: %v", err)
+	}
+
+	getUserPlaylists, err := r.db.Collection("playlists").Find(context.TODO(), bson.M{"createdByID": userObjectID})
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			return nil, nil, PlaylistNotFoundError
+		}
+		return nil, nil, fmt.Errorf("get user playlists error: %v", err)
+	}
+
+	defer getUserPlaylists.Close(context.TODO())
+
+	playlists := []model.Playlist{}
+	for getUserPlaylists.Next(context.TODO()) {
+		var playlist model.Playlist
+		err = getUserPlaylists.Decode(&playlist)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get user playlists error: %v", err)
+		}
+		playlists = append(playlists, playlist)
+	}
+
+	playlistsTracks := [][]model.Track{}
+	for _, playlist := range playlists {
+		playlistTracksResult, err := r.db.Collection("tracks").Find(context.TODO(), bson.M{"_id": bson.M{"$in": playlist.TrackList}})
+		if err != nil {
+			return nil, nil, fmt.Errorf("get user playlists error: %v", err)
+		}
+
+		defer playlistTracksResult.Close(context.TODO())
+
+		playlistTracks := []model.Track{}
+		for playlistTracksResult.Next(context.TODO()) {
+			var track model.Track
+			err = playlistTracksResult.Decode(&track)
+			if err != nil {
+				return nil, nil, fmt.Errorf("get user playlists error: %v", err)
+			}
+			playlistTracks = append(playlistTracks, track)
+		}
+
+		playlistsTracks = append(playlistsTracks, playlistTracks)
+	}
+
+	return playlists, playlistsTracks, nil
+}
+
+func (r Repository) AddTracksToPlaylist(userID, playlistID string, trackList []string) error {
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("add tracks to playlist error: %v", err)
 	}
 
 	playlistObjectID, err := primitive.ObjectIDFromHex(playlistID)
 	if err != nil {
-		return fmt.Errorf("error while parsing playlist id: %v", err)
+		return fmt.Errorf("add tracks to playlist error: %v", err)
 	}
 
-	audioObjectIDs := []primitive.ObjectID{}
-	for _, audioID := range audioIDs {
-		audioObjectID, err := primitive.ObjectIDFromHex(audioID)
+	trackObjectList := []primitive.ObjectID{}
+	for _, trackID := range trackList {
+		trackObjectID, err := primitive.ObjectIDFromHex(trackID)
 		if err != nil {
-			return fmt.Errorf("error while parsing track id: %v", err)
+			return fmt.Errorf("add tracks to playlist error: %v", err)
 		}
-		audioObjectIDs = append(audioObjectIDs, audioObjectID)
+		trackObjectList = append(trackObjectList, trackObjectID)
 	}
 
-	_, err = r.db.Collection("playlists").UpdateOne(context.TODO(), bson.M{"_id": playlistObjectID, "createdByID": userObjectID}, bson.M{"$push": bson.M{"playlist": bson.M{"$each": audioObjectIDs}}})
+	_, err = r.db.Collection("playlists").UpdateOne(context.TODO(), bson.M{"_id": playlistObjectID, "createdByID": userObjectID}, bson.M{"$push": bson.M{"tracklist": bson.M{"$each": trackObjectList}}})
 	if err != nil {
-		return fmt.Errorf("add track to playlist error: %v", err)
+		return fmt.Errorf("add tracks to playlist error: %v", err)
 	}
 
 	return nil
 }
 
-func (r Repository) DeleteAudioListFromPlaylist(userID, playlistID string, audioIDs []string) error {
+func (r Repository) RemoveTracksFromPlaylist(userID, playlistID string, trackList []string) error {
 	userObjectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return fmt.Errorf("error while parsing user id: %v", err)
+		return fmt.Errorf(": %v", err)
 	}
 
 	playlistObjectID, err := primitive.ObjectIDFromHex(playlistID)
 	if err != nil {
-		return fmt.Errorf("error while parsing playlist id: %v", err)
+		return fmt.Errorf("remove tracks from playlist error: %v", err)
 	}
 
-	audioObjectIDs := []primitive.ObjectID{}
-	for _, audioID := range audioIDs {
-		audioObjectID, err := primitive.ObjectIDFromHex(audioID)
+	trackObjectList := []primitive.ObjectID{}
+	for _, trackID := range trackList {
+		trackObjectID, err := primitive.ObjectIDFromHex(trackID)
 		if err != nil {
-			return fmt.Errorf("error while parsing track id: %v", err)
+			return fmt.Errorf("remove tracks from playlist error: %v", err)
 		}
-		audioObjectIDs = append(audioObjectIDs, audioObjectID)
+		trackObjectList = append(trackObjectList, trackObjectID)
 	}
 
-	_, err = r.db.Collection("playlists").UpdateOne(context.TODO(), bson.M{"_id": playlistObjectID, "createdByID": userObjectID}, bson.M{"$pull": bson.M{"playlist": bson.M{"$in": audioObjectIDs}}})
+	_, err = r.db.Collection("playlists").UpdateOne(context.TODO(), bson.M{"_id": playlistObjectID, "createdByID": userObjectID}, bson.M{"$pull": bson.M{"tracklist": bson.M{"$in": trackObjectList}}})
 	if err != nil {
-		return fmt.Errorf("delete tracks from playlist error: %v", err)
+		return fmt.Errorf("remove tracks from playlist error: %v", err)
 	}
 
 	return nil
