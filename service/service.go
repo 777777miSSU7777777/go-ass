@@ -218,3 +218,59 @@ func (s Service) GetAllAudioPlaylists() ([]model.AudioPlaylist, [][]model.Audio,
 
 	return audioPlaylists, audioPlaylistsTracks, nil
 }
+
+func (s Service) CreateNewPlaylist(title, createdByID string, audioIDs []string) (model.AudioPlaylist, []model.Audio, error) {
+	err := model.ValidatePlaylist(title)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	id, err := s.repo.CreateNewPlaylist(title, createdByID, audioIDs)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	playlist, playlistTracks, err := s.repo.GetAudioPlaylistById(id)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	return playlist, playlistTracks, nil
+}
+
+func (s Service) GetAudioPlaylistByID(id string) (model.AudioPlaylist, []model.Audio, error) {
+	playlist, playlistTracks, err := s.repo.GetAudioPlaylistById(id)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	return playlist, playlistTracks, nil
+}
+
+func (s Service) AddAudioListToPlayList(userID, playlistID string, audioIDs []string) (model.AudioPlaylist, []model.Audio, error) {
+	err := s.repo.AddAudioListToPlaylist(userID, playlistID, audioIDs)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	playlist, playlistTracks, err := s.repo.GetAudioPlaylistById(playlistID)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	return playlist, playlistTracks, nil
+}
+
+func (s Service) DeleteAudioListFromPlayList(userID, playlistID string, audioIDs []string) (model.AudioPlaylist, []model.Audio, error) {
+	err := s.repo.DeleteAudioListFromPlaylist(userID, playlistID, audioIDs)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	playlist, playlistTracks, err := s.repo.GetAudioPlaylistById(playlistID)
+	if err != nil {
+		return model.AudioPlaylist{}, nil, err
+	}
+
+	return playlist, playlistTracks, nil
+}

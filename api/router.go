@@ -12,6 +12,8 @@ func NewAPIRouter(r *mux.Router, api API) {
 	publicAPI.Use(middleware.AllowCorsMiddleware)
 	publicAPI.Methods("GET").Path("/audio").HandlerFunc(api.GetAudioList)
 	publicAPI.Methods("GET").Path("/audio/{id}").HandlerFunc(api.GetAudioByID)
+	publicAPI.Methods("GET").Path("/audio-playlists").HandlerFunc(api.GetAllAudioPlaylists)
+	publicAPI.Methods("GET").Path("/audio-playlists/{id}").HandlerFunc(api.GetAudioPlaylistByID)
 
 	authorizedAPI := r.PathPrefix("/api").Subrouter()
 	authorizedAPI.Use(JwtAuthMiddleware)
@@ -23,6 +25,9 @@ func NewAPIRouter(r *mux.Router, api API) {
 	authorizedAPI.Methods("GET").Path("/user-audio").HandlerFunc(api.GetUserAudioList)
 	authorizedAPI.Methods("POST").Path("/user-audio").HandlerFunc(api.AddAudioToUserAudioList)
 	authorizedAPI.Methods("DELETE").Path("/user-audio").HandlerFunc(api.DeleteAudioFromUserAudioList)
+	authorizedAPI.Methods("POST").Path("/audio-playlists").HandlerFunc(api.CreateNewPlaylist)
+	authorizedAPI.Methods("PATCH").Path("/audio-playlists/{id}/add").HandlerFunc(api.AddAudioListToPlaylist)
+	authorizedAPI.Methods("PATCH").Path("/audio-playlists/{id}/delete").HandlerFunc(api.DeleteAudioListFromPlaylist)
 }
 
 func NewAuthRouter(r *mux.Router, api API) {

@@ -300,3 +300,124 @@ func (a API) DeleteAudioFromUserAudioList(w http.ResponseWriter, r *http.Request
 
 	_ = json.NewEncoder(w).Encode(DeleteAudioFromUserAudioListResponse{})
 }
+
+func (a API) GetAllAudioPlaylists(w http.ResponseWriter, r *http.Request) {
+	audioPlaylists, audioPlaylistsTracks, err := a.svc.GetAllAudioPlaylists()
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+		return
+	}
+
+	resp := GetAllAudioPlayListsResponse{}
+	for playlistIndex, playlist := range audioPlaylists {
+		trackList := []AudioResponse{}
+		for _, playlistTrack := range audioPlaylistsTracks[playlistIndex] {
+			trackList = append(trackList, AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title})
+		}
+		resp = append(resp, AudioPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title, TrackList: trackList})
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) CreateNewPlaylist(w http.ResponseWriter, r *http.Request) {
+	var req CreateNewPlaylistRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	playlist, playlistTracks, err := a.svc.CreateNewPlaylist(req.Title, userID, req.TrackList)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+	}
+
+	resp := AudioPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	for _, playlistTrack := range playlistTracks {
+		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		resp.TrackList = append(resp.TrackList, track)
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) GetAudioPlaylistByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playlistID := vars["id"]
+
+	playlist, playlistTracks, err := a.svc.GetAudioPlaylistByID(playlistID)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+		return
+	}
+
+	resp := GetAudioPlaylistByIDResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	for _, playlistTrack := range playlistTracks {
+		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		resp.TrackList = append(resp.TrackList, track)
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) AddAudioListToPlaylist(w http.ResponseWriter, r *http.Request) {
+	var req AddAudioListToPlaylistRequest
+
+	vars := mux.Vars(r)
+	playlistID := vars["id"]
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	playlist, playlistTracks, err := a.svc.AddAudioListToPlayList(userID, playlistID, req.TrackList)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+		return
+	}
+
+	resp := AddAudioListToPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	for _, playlistTrack := range playlistTracks {
+		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		resp.TrackList = append(resp.TrackList, track)
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (a API) DeleteAudioListFromPlaylist(w http.ResponseWriter, r *http.Request) {
+	var req DeleteAudioListFromPlaylistRequest
+
+	vars := mux.Vars(r)
+	playlistID := vars["id"]
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	playlist, playlistTracks, err := a.svc.DeleteAudioListFromPlayList(userID, playlistID, req.TrackList)
+	if err != nil {
+		writeError(w, 400, ServiceError, err)
+		return
+	}
+
+	resp := DeleteAudioListFromPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
+	for _, playlistTrack := range playlistTracks {
+		track := AudioResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
+		resp.TrackList = append(resp.TrackList, track)
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}

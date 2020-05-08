@@ -42,4 +42,19 @@ type AddAudioToUserAudioListRequest struct {
 
 type DeleteAudioFromUserAudioListRequest AddAudioToUserAudioListRequest
 
-type GetUserAudioListRequest struct {}
+type GetUserAudioListRequest struct{}
+
+type GetAllAudioPlaylistsRequest struct{}
+
+type GetAudioPlaylistByIDRequest struct{}
+
+type CreateNewPlaylistRequest struct {
+	Title     string   `json:"title"`
+	TrackList []string `json:"tracklist"`
+}
+
+type AddAudioListToPlaylistRequest struct {
+	TrackList []string `json:"tracklist"`
+}
+
+type DeleteAudioListFromPlaylistRequest AddAudioListToPlaylistRequest
