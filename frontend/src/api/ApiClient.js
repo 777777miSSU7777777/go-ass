@@ -18,7 +18,7 @@ class ApiClient {
     }
 
     getAllAudio() {
-       return fetch(`${this.baseUrl}/api/audio`, {method: 'GET'})
+       return fetch(`${this.baseUrl}/api/audio/tracks`, {method: 'GET'})
                     .then(resp => resp.json())
                     .then(data => data);
     }

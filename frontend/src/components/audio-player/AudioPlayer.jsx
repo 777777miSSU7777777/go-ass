@@ -44,7 +44,7 @@ class AudioPlayer extends React.Component {
             this.hls.destroy();
         }
         
-        this.hls = new Hls();
+        this.hls = new Hls({maxMaxBufferLength: 10});
         this.hls.attachMedia(this.playerRef.current);
         this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
             this.hls.loadSource(`${Config.serverUrl}/media/${this.props.playingId}/stream/`);
