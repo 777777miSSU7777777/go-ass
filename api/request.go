@@ -42,6 +42,8 @@ type GetUserPlaylists struct{}
 
 type GetPlaylistByIDRequest struct{}
 
+type DeletePlaylistByIDRequest struct{}
+
 type CreateNewPlaylistRequest struct {
 	Title     string   `json:"title"`
 	TrackList []string `json:"tracklist"`

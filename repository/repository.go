@@ -527,6 +527,30 @@ func (r Repository) GetPlaylistByID(playlistID string) (model.Playlist, []model.
 	return playlist, playlistTracks, nil
 }
 
+func (r Repository) DeletePlaylistByID(playlistID, createdByID string) error {
+	playlistObjectID, err := primitive.ObjectIDFromHex(playlistID)
+	if err != nil {
+		return fmt.Errorf("delete playlist by id error: %v", err)
+	}
+
+	createdByObjectID, err := primitive.ObjectIDFromHex(createdByID)
+	if err != nil {
+		return fmt.Errorf("delete playlist by id error: %v", err)
+	}
+
+	deletePlaylistByIDResult, err := r.db.Collection("playlists").DeleteOne(context.TODO(), bson.M{"_id": playlistObjectID, "createdByID": createdByObjectID})
+
+	if err != nil {
+		return fmt.Errorf("delete playlist by id error: %v", err)
+	}
+
+	if deletePlaylistByIDResult.DeletedCount == 0 {
+		return PlaylistNotFoundError
+	}
+
+	return nil
+}
+
 func (r Repository) GetUserPlaylists(userID string) ([]model.Playlist, [][]model.Track, error) {
 	userObjectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {

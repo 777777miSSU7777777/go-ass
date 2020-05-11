@@ -266,6 +266,16 @@ func (s Service) GetPlaylistByID(playlistID string) (model.Playlist, []model.Tra
 	return playlist, playlistTracks, nil
 }
 
+func (s Service) DeletePlaylistByID(playlistID, createdByID string) error {
+	err := s.repo.DeletePlaylistByID(playlistID, createdByID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s Service) AddTracksToPlaylist(userID, playlistID string, trackList []string) (model.Playlist, []model.Track, error) {
 	err := s.repo.AddTracksToPlaylist(userID, playlistID, trackList)
 	if err != nil {

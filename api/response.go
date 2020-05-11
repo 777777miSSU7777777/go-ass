@@ -47,6 +47,8 @@ type CreateNewPlaylistResponse PlaylistResponse
 
 type GetPlaylistByIDResponse PlaylistResponse
 
+type DeletePlaylistByIDResponse struct{}
+
 type AddTracksToPlaylistResponse PlaylistResponse
 
 type RemoveTracksFromPlaylistResponse PlaylistResponse

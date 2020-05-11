@@ -392,6 +392,26 @@ func (a API) GetPlaylistByID(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
+func (a API) DeletePlaylistByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playlistID := vars["id"]
+
+	userID := r.Context().Value("userID").(string)
+
+	err := a.svc.DeletePlaylistByID(playlistID, userID)
+	if err != nil {
+		if err.Error() == repository.PlaylistNotFoundError.Error() {
+			writeError(w, 404, NotFoundError, err)
+			return
+		} else {
+			writeError(w, 400, ServiceError, err)
+			return
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(DeletePlaylistByIDResponse{})
+}
+
 func (a API) AddTracksToPlaylist(w http.ResponseWriter, r *http.Request) {
 	var req AddTracksToPlaylistRequest
 

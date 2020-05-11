@@ -26,6 +26,7 @@ func NewAPIRouter(r *mux.Router, api API) {
 	authorizedAPI.Methods("PATCH").Path("/audio/user-list/add").HandlerFunc(api.AddTrackToUserTrackList)
 	authorizedAPI.Methods("PATCH").Path("/audio/user-list/remove").HandlerFunc(api.RemoveTrackFromUserTrackList)
 	authorizedAPI.Methods("POST").Path("/audio/playlists").HandlerFunc(api.CreateNewPlaylist)
+	authorizedAPI.Methods("DELETE", "OPTIONS").Path("/audio/playlists/{id}").HandlerFunc(api.DeletePlaylistByID)
 	authorizedAPI.Methods("GET").Path("/audio/user-playlists").HandlerFunc(api.GetUserPlaylists)
 	authorizedAPI.Methods("PATCH").Path("/audio/playlists/{id}/add").HandlerFunc(api.AddTracksToPlaylist)
 	authorizedAPI.Methods("PATCH").Path("/audio/playlists/{id}/remove").HandlerFunc(api.RemoveTracksFromPlaylist)
