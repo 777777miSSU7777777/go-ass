@@ -48,10 +48,8 @@ func (a API) AddTrack(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == model.TrackAuthorEmpty.Error() || err.Error() == model.TrackTitleEmpty.Error() {
 			writeError(w, 400, ValidationError, err)
-			fmt.Println(err)
 		} else {
 			writeError(w, 400, ServiceError, err)
-			fmt.Println(err)
 		}
 		_ = a.m.Delete(w, newTrack.ID.Hex())
 		return
@@ -176,11 +174,7 @@ func (a API) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	err = a.svc.SignUp(req.Email, req.Name, req.Password)
 	if err != nil {
-		if err.Error() == repository.UserNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
+		writeError(w, 400, ServiceError, err)
 		return
 	}
 
@@ -203,6 +197,7 @@ func (a API) SignIn(w http.ResponseWriter, r *http.Request) {
 		} else {
 			writeError(w, 400, ServiceError, err)
 		}
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken})
@@ -224,6 +219,7 @@ func (a API) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		} else {
 			writeError(w, 400, ServiceError, err)
 		}
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken})
@@ -245,6 +241,7 @@ func (a API) SignOut(w http.ResponseWriter, r *http.Request) {
 		} else {
 			writeError(w, 400, ServiceError, err)
 		}
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(SignOutResponse{})
@@ -260,6 +257,7 @@ func (a API) GetUserTrackList(w http.ResponseWriter, r *http.Request) {
 		} else {
 			writeError(w, 400, ServiceError, err)
 		}
+		return
 	}
 
 	resp := GetUserTrackListResponse{}
@@ -284,6 +282,7 @@ func (a API) AddTrackToUserTrackList(w http.ResponseWriter, r *http.Request) {
 	resp, err := a.svc.AddTrackToUserTrackList(userID, req.TrackID)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(resp)
@@ -303,6 +302,7 @@ func (a API) RemoveTrackFromUserTrackList(w http.ResponseWriter, r *http.Request
 	resp, err := a.svc.RemoveTrackFromUserTrackList(userID, req.TrackID)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
+		return
 	}
 
 	_ = json.NewEncoder(w).Encode(resp)
@@ -362,6 +362,7 @@ func (a API) CreateNewPlaylist(w http.ResponseWriter, r *http.Request) {
 	playlist, playlistTracks, err := a.svc.CreateNewPlaylist(req.Title, userID, req.TrackList)
 	if err != nil {
 		writeError(w, 400, ServiceError, err)
+		return
 	}
 
 	resp := PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
