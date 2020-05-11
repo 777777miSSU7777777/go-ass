@@ -18,9 +18,14 @@ func (a StreamAPI) Stream(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	seg, ok := vars["seg"]
-	if !ok {
-		a.m.ServeM3u8(w, r, id)
+	seg, segOk := vars["seg"]
+	if !segOk {
+		qualityManifest, qualityOk := vars["quality_manifest"]
+		if !qualityOk {
+			a.m.ServeMainM3u8(w, r, id)
+			return
+		}
+		a.m.ServeQualityM3u8(w, r, id, qualityManifest)
 	} else {
 		a.m.ServeTs(w, r, id, seg)
 	}

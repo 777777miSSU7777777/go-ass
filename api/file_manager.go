@@ -16,11 +16,22 @@ var HLSError = "HLS ERROR"
 var DeleteAudioError = "DELETE AUDIO ERROR"
 
 type FileManager struct {
-	baseLocation string
+	baseLocation               string
+	mainManifestTemplateString string
 }
 
 func NewFileManager(base string) FileManager {
-	return FileManager{base}
+	mainManifestTemplateString := "#EXTM3U\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH:64000\n" +
+		"%s_64k.m3u8\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH:96000\n" +
+		"%s_96k.m3u8\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH:128000\n" +
+		"%s_128k.m3u8\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH:192000\n" +
+		"%s_192k.m3u8\n"
+
+	return FileManager{base, mainManifestTemplateString}
 }
 
 func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id string) error {
@@ -49,7 +60,7 @@ func (m FileManager) Upload(w http.ResponseWriter, r *http.Request, id string) e
 		return err
 	}
 
-	file, err := os.Create(fmt.Sprintf("%s/%s/mp3/audio%s.mp3", m.baseLocation, id, id))
+	file, err := os.Create(fmt.Sprintf("%s/%s/mp3/%s.mp3", m.baseLocation, id, id))
 	if err != nil {
 		writeError(w, 500, FileWriteError, fmt.Errorf("error while writing file: %v", err))
 		return err
@@ -77,18 +88,32 @@ func (m FileManager) transcodeToHLS(id string) error {
 		return err
 	}
 
-	m3u8Dst := fmt.Sprintf("%s/%s/hls/audio%s.m3u8", m.baseLocation, id, id)
-	segDst := fmt.Sprintf("%s/%s/hls/seg%s.ts", m.baseLocation, id, "%02d")
 	cmd := exec.Command("ffmpeg",
-		"-i", fmt.Sprintf("%s/%s/mp3/audio%s.mp3", m.baseLocation, id, id),
-		"-vn", "-ac", "2",
-		"-acodec", "aac",
-		"-f", "segment",
-		"-segment_format", "mpegts",
-		"-segment_time", "10",
-		"-segment_list", m3u8Dst, segDst)
+		"-i", fmt.Sprintf("%s/%s/mp3/%s.mp3", m.baseLocation, id, id),
+
+		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "64k", "-map", "0:a:0",
+		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
+		fmt.Sprintf("%s/%s/hls/seg%s_64k.ts", m.baseLocation, id, "%02d"), fmt.Sprintf("%s/%s/hls/%s_64k.m3u8", m.baseLocation, id, id),
+
+		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "96k", "-map", "0:a:0",
+		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
+		fmt.Sprintf("%s/%s/hls/seg%s_96k.ts", m.baseLocation, id, "%02d"), fmt.Sprintf("%s/%s/hls/%s_96k.m3u8", m.baseLocation, id, id),
+
+		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "128k", "-map", "0:a:0",
+		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
+		fmt.Sprintf("%s/%s/hls/seg%s_128k.ts", m.baseLocation, id, "%02d"), fmt.Sprintf("%s/%s/hls/%s_128k.m3u8", m.baseLocation, id, id),
+
+		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "192k", "-map", "0:a:0",
+		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
+		fmt.Sprintf("%s/%s/hls/seg%s_192k.ts", m.baseLocation, id, "%02d"), fmt.Sprintf("%s/%s/hls/%s_192k.m3u8", m.baseLocation, id, id))
 
 	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	mainManifestContent := []byte(fmt.Sprintf(m.mainManifestTemplateString, id, id, id, id))
+	err = ioutil.WriteFile(fmt.Sprintf("%s/%s/hls/%s.m3u8", m.baseLocation, id, id), mainManifestContent, 0755)
 	if err != nil {
 		return err
 	}

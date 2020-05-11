@@ -13,8 +13,14 @@ func NewMediaManager(base string) MediaManager {
 	return MediaManager{base}
 }
 
-func (m MediaManager) ServeM3u8(w http.ResponseWriter, r *http.Request, id string) {
-	m3u8File := fmt.Sprintf("%s/%s/hls/audio%s.m3u8", m.baseLocation, id, id)
+func (m MediaManager) ServeMainM3u8(w http.ResponseWriter, r *http.Request, id string) {
+	m3u8File := fmt.Sprintf("%s/%s/hls/%s.m3u8", m.baseLocation, id, id)
+	http.ServeFile(w, r, m3u8File)
+	w.Header().Set("Content-Type", "application/x-mpegURL")
+}
+
+func (m MediaManager) ServeQualityM3u8(w http.ResponseWriter, r *http.Request, id string, qualityManifest string) {
+	m3u8File := fmt.Sprintf("%s/%s/hls/%s", m.baseLocation, id, qualityManifest)
 	http.ServeFile(w, r, m3u8File)
 	w.Header().Set("Content-Type", "application/x-mpegURL")
 }
@@ -26,7 +32,7 @@ func (m MediaManager) ServeTs(w http.ResponseWriter, r *http.Request, id string,
 }
 
 func (m MediaManager) ServerMp3(w http.ResponseWriter, r *http.Request, id string) {
-	mp3File := fmt.Sprintf("%s/%s/mp3/audio%s.mp3", m.baseLocation, id, id)
+	mp3File := fmt.Sprintf("%s/%s/mp3/%s.mp3", m.baseLocation, id, id)
 	http.ServeFile(w, r, mp3File)
 	w.Header().Set("Content-Type", "audio/mpeg")
 }
