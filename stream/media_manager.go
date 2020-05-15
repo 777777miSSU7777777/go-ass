@@ -13,7 +13,7 @@ func NewMediaManager(base string) MediaManager {
 	return MediaManager{base}
 }
 
-func (m MediaManager) ServeMainM3u8(w http.ResponseWriter, r *http.Request, id string) {
+func (m MediaManager) ServeMasterM3u8(w http.ResponseWriter, r *http.Request, id string) {
 	m3u8File := fmt.Sprintf("%s/%s/hls/%s.m3u8", m.baseLocation, id, id)
 	http.ServeFile(w, r, m3u8File)
 	w.Header().Set("Content-Type", "application/x-mpegURL")

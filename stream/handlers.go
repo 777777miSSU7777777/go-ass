@@ -22,7 +22,7 @@ func (a StreamAPI) Stream(w http.ResponseWriter, r *http.Request) {
 	if !segOk {
 		qualityManifest, qualityOk := vars["quality_manifest"]
 		if !qualityOk {
-			a.m.ServeMainM3u8(w, r, id)
+			a.m.ServeMasterM3u8(w, r, id)
 			return
 		}
 		a.m.ServeQualityM3u8(w, r, id, qualityManifest)
