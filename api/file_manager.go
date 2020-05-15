@@ -22,13 +22,13 @@ type FileManager struct {
 
 func NewFileManager(base string) FileManager {
 	mainManifestTemplateString := "#EXTM3U\n" +
-		"#EXT-X-STREAM-INF:BANDWIDTH:64000\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
 		"%s_64k.m3u8\n" +
-		"#EXT-X-STREAM-INF:BANDWIDTH:96000\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH-96000\n" +
 		"%s_96k.m3u8\n" +
-		"#EXT-X-STREAM-INF:BANDWIDTH:128000\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH-128000\n" +
 		"%s_128k.m3u8\n" +
-		"#EXT-X-STREAM-INF:BANDWIDTH:192000\n" +
+		"#EXT-X-STREAM-INF:BANDWIDTH=192000\n" +
 		"%s_192k.m3u8\n"
 
 	return FileManager{base, mainManifestTemplateString}
