@@ -98,7 +98,7 @@ func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, 
 }
 
 func (repo *Repository) DeleteArtist(artistID int64) error {
-	if err := repo.db.Where("artist_id", artistID).Delete(&model.Artist{}).Error; err != nil {
+	if err := repo.db.Delete(&model.Artist{ ArtistID: artistID }).Error; err != nil {
 		return err
 	}
 
@@ -222,7 +222,7 @@ func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Pl
 }
 
 func (repo *Repository) DeletePlaylist(playlistID int64) error {
-	if err := repo.db.Where("playlist_id", playlistID).Delete(&model.Playlist{}).Error; err != nil {
+	if err := repo.db.Delete(&model.Playlist{ PlaylistID: playlistID }).Error; err != nil {
 		return err
 	}
 
@@ -265,7 +265,7 @@ func (repo *Repository) DeleteTracksFromPlaylist(playlistID int64, tracksID ...i
 	}()
 
 	for _, trackID := range tracksID {
-		err := repo.db.Delete(&model.PlaylistTracks{ playlistID: playlistID, trackID: trackID }).Error; if err != nil {
+		err := repo.db.Delete(&model.PlaylistTracks{ PlaylistID: playlistID, TrackID: trackID }).Error; if err != nil {
 			tx.RollBack()
 			return err
 		}
@@ -343,7 +343,7 @@ func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, erro
 }
 
 func (repo *Repository) DeleteTrack(trackID int64) error {
-	if err := repo.db.Where("track_id", trackID).Delete(&model.Track{}).Error; err != nil {
+	if err := repo.db.Delete(&model.Track{ TrackID: trackID }).Error; err != nil {
 		return err
 	}
 
@@ -409,7 +409,7 @@ func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
 }
 
 func (repo *Repository) DeleteUser(userID int64) (model.User, error) {
-	if err := repo.db.Where("user_id", userID).Delete(&model.User{}).Error; err != nil {
+	if err := repo.db.Delete(&model.User{ UserID: userID }).Error; err != nil {
 		return err
 	}
 
@@ -453,7 +453,7 @@ func (repo *Repository) DeleteTracksFromUserList(userID int64, tracksID ...) {
 	}()
 
 	for _, trackID := range tracksID {
-		err := repo.db.Delete(&model.UserTracks{ userID: userID, trackID: trackID }).Error; if err != nil {
+		err := repo.db.Delete(&model.UserTracks{ UserID: userID, TrackID: trackID }).Error; if err != nil {
 			tx.RollBack()
 			return err
 		}
@@ -503,7 +503,7 @@ func (repo *Repository) DeletePlaylistsFromUserList(userID int64, playlistsID ..
 	}()
 
 	for _, playlistID := range playlistsID {
-		err := repo.db.Delete(&model.UserPlaylists{ userID: userID, playlistID: playlistID }).Error; if err != nil {
+		err := repo.db.Delete(&model.UserPlaylists{ UserID: userID, playlistID: PlaylistID }).Error; if err != nil {
 			tx.RollBack()
 			return err
 		}
