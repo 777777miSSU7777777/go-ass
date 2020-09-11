@@ -53,10 +53,10 @@ func (repo *Repository) GetArtist(artistID int64) (model.Artist, error) {
 		return model.Artist{}, err
 	}
 
-	return artist
+	return artist, nil
 }
 
-func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, err) {
+func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, error) {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -160,6 +160,72 @@ func (repo *Repository) UpdateGenre(updatedGenre model.Genre) (model.Genre, erro
 	}
 
 	return genre, nil
+}
+
+func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) (model.Playlist, error) {
+	var playlists []model.Playlist
+	if err := repo.db.Find(&playlists).Error; err != nil {
+		return nil, err
+	}
+
+	return playlists, nil
+}
+
+func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
+	var playlist model.Playlist
+	if err := repo.db.Where("playlist_id", playlistID).First(&playlist).Error; if err != nil {
+		return model.Playlist{}, err
+	}
+
+	return playlist, nil
+}
+
+func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playlist, error) {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	result := tx.Create(&newPlaylist)
+
+	if err := result.Error; err != nil {
+		tx.RollBack()
+		return model.Playlist{}, err
+	}
+
+	resultValue := result.Value.(model.Playlist)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return model.Playlist{}, err
+	}
+
+	return resultValue, nil
+}
+
+func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Playlist, error) {
+	var playlist model.Playlist
+
+	if err := repo.db.Where("playlist_id", updatedPlaylist.PlaylistID).Find(&playlist).Error; err != nil {
+		return model.Playlist{}, err
+	}
+
+	if err := repo.db.Model(&playlist).Updates(updatedPlaylist).Error; err != nil {
+		return model.Playlist{}, err
+	}
+
+	return playlist, nil
+}
+
+func (repo *Repository) DeletePlaylist(playlistID int64) error {
+	if err := repo.db.Where("playlist_id", playlistID).Delete(&model.Playlist{}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo *Repository) GetAllTracks() ([]model.Track, error) {
