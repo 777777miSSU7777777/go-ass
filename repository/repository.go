@@ -96,7 +96,7 @@ func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, 
 	return artist, nil
 }
 
-func (repo *Repository) DeleteTrack(artistID int64) error {
+func (repo *Repository) DeleteArtist(artistID int64) error {
 	if err := repo.db.Where("artist_id", artistID).Delete(&model.Artist{}).Error; err != nil {
 		return err
 	}
