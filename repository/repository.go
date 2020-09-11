@@ -49,8 +49,8 @@ func (repo *Repository) GetAllArtists() ([]model.Artist, error) {
 
 func (repo *Repository) GetArtist(artistID int64) (model.Artist, error) {
 	var artist model.Artist
-	if err := repo.db.where("artist_id", artistID).First(&artist).Error; if err != nil {
-		return model.Artist, err
+	if err := repo.db.Where("artist_id", artistID).First(&artist).Error; if err != nil {
+		return model.Artist{}, err
 	}
 
 	return artist
@@ -104,6 +104,64 @@ func (repo *Repository) DeleteArtist(artistID int64) error {
 	return nil
 }
 
+func (repo *Repository) GetAllGenres() ([]model.Genre, error) {
+	var genres []model.Genre
+	if err := repo.db.Find(&genres).Error; err != nil {
+		return nil, err
+	}
+
+	return genres, nil
+}
+
+func (repo *Repository) GetGenre(genreID int64) (model.Genre, error) {
+	var genre model.Genre
+	if err := repo.db.Where("genre_id", genreID).First(&genre).Error; if err != nil {
+		return model.Genre{}, err
+	}
+
+	return genre, nil
+}
+
+func (repo *Repository) AddNewGenre(newGenre model.Genre) (model.Genre, error) {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	result := tx.Create(&newGenre)
+
+	if err := result.Error; err != nil {
+		tx.Rollback()
+		return model.Genre{}, err
+	}
+
+	resultValue := result.Value.(model.Genre)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return model.Genre{}, err
+	}
+
+	return resultValue, nil
+}
+
+func (repo *Repository) UpdateGenre(updatedGenre model.Genre) (model.Genre, error) {
+	var genre model.Genre
+
+	if err := repo.db.Where("genre_id", updatedGenre.GenreID).Find(&genre).Error; err != nil {
+		return model.Genre{}, err
+	}
+
+	if err := repo.db.Model(&genre).Updates(updatedGenre).Error; err != nil {
+		return model.Genre{}, err
+	}
+
+	return genre, nil
+}
+
 func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 	var tracks []model.Track
 	if err := repo.db.Find(&tracks).Error; err != nil {
@@ -119,7 +177,7 @@ func (repo *Repository) GetTrack(trackID int64) (model.Track, error) {
 		return model.Track{}, err
 	}
 
-	return track
+	return track, nil
 }
 
 func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrackCallback) (model.Track, err) {
