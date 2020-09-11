@@ -50,7 +50,7 @@ func (repo *Repository) GetAllArtists() ([]model.Artist, error) {
 
 func (repo *Repository) GetArtist(artistID int64) (model.Artist, error) {
 	var artist model.Artist
-	if err := repo.db.Where("artist_id", artistID).First(&artist).Error; if err != nil {
+	if err := repo.db.Where(&model.Artist{ ArtistID: artistID }).First(&artist).Error; if err != nil {
 		return model.Artist{}, err
 	}
 
@@ -116,7 +116,7 @@ func (repo *Repository) GetAllGenres() ([]model.Genre, error) {
 
 func (repo *Repository) GetGenre(genreID int64) (model.Genre, error) {
 	var genre model.Genre
-	if err := repo.db.Where("genre_id", genreID).First(&genre).Error; if err != nil {
+	if err := repo.db.Where(&model.Genre{ GenreID: genreID }).First(&genre).Error; if err != nil {
 		return model.Genre{}, err
 	}
 
@@ -174,7 +174,7 @@ func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) (model.P
 
 func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
 	var playlist model.Playlist
-	if err := repo.db.Where("playlist_id", playlistID).First(&playlist).Error; if err != nil {
+	if err := repo.db.Where(&model.Playlist{ PlaylistID: playlistID }).First(&playlist).Error; if err != nil {
 		return model.Playlist{}, err
 	}
 
@@ -290,7 +290,7 @@ func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 
 func (repo *Repository) GetTrack(trackID int64) (model.Track, error) {
 	var track model.Track
-	if err := repo.db.Where("track_id", trackID).First(&track).Error; if err != nil {
+	if err := repo.db.Where(&model.Track{ TrackID: trackID }).First(&track).Error; if err != nil {
 		return model.Track{}, err
 	}
 
@@ -361,7 +361,7 @@ func (repo *Repository) GetAllUsers() ([]model.User, error) {
 
 func (repo *Repository) GetUser(userID int64) (model.User, error) {
 	var user model.User
-	if err := repo.db.Where("user_id", userID).First(&user).Error; if err != nil {
+	if err := repo.db.Where(&model.User{ UserID: userID }).First(&user).Error; if err != nil {
 		return model.User{}, err
 	}
 
