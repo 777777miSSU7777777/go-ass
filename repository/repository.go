@@ -38,6 +38,72 @@ func NewRepository(dbType string, connectionString string) *Repository {
 	return &Repository{ db: db }
 }
 
+func (repo *Repository) GetAllArtists() ([]model.Artist, error) {
+	var artists []model.Artist
+	if err := repo.db.Find(&artists).Error; err != nil {
+		return nil, err
+	}
+	
+	return artists, nil
+}
+
+func (repo *Repository) GetArtist(artistID int64) (model.Artist, error) {
+	var artist model.Artist
+	if err := repo.db.where("artist_id", artistID).First(&artist).Error; if err != nil {
+		return model.Artist, err
+	}
+
+	return artist
+}
+
+func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, err) {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	result := tx.Create(&newArtist)
+
+	if err := result.Error; err != nil {
+		tx.Rollback()
+		return model.Artist{}, err
+	}
+
+	resultValue := result.Value.(model.Artist)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return model.Artist{}, err
+	}
+
+	return resultValue, nil
+}
+
+func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, error) {
+	var artist model.Artist
+
+	if err := repo.db.Where("artist_id", updatedArtist.ArtistID).Find(&artist).Error; err != nil {
+		return model.Artist{}, err
+	}
+
+	if err := repo.db.Model(&artist).Updates(updatedArtist).Error; err != nil {
+		return model.Artist{}, err
+	}
+
+	return artist, nil
+}
+
+func (repo *Repository) DeleteTrack(artistID int64) error {
+	if err := repo.db.Where("artist_id", artistID).Delete(&model.Artist{}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 	var tracks []model.Track
 	if err := repo.db.Find(&tracks).Error; err != nil {
@@ -102,7 +168,7 @@ func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, erro
 }
 
 func (repo *Repository) DeleteTrack(trackID int64) error {
-	if err := repo.db.Where("track_id", trackID).Delete(&model.User{}).Error; err != nil {
+	if err := repo.db.Where("track_id", trackID).Delete(&model.Track{}).Error; err != nil {
 		return err
 	}
 
