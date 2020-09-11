@@ -30,6 +30,7 @@ func NewRepository(dbType string, connectionString string) *Repository {
 	db.AutoMigrate(&model.PlaylistTracks{})
 	db.AutoMigrate(&model.Track{})
 	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&model.UserPlaylists{})
 	db.AutoMigrate(&model.UserTokens{})
 	db.AutoMigrate(&model.UserTracks{})
 
@@ -293,6 +294,72 @@ func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, erro
 
 func (repo *Repository) DeleteTrack(trackID int64) error {
 	if err := repo.db.Where("track_id", trackID).Delete(&model.Track{}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) GetAllUsers() ([]model.User, error) {
+	var users []model.User
+	if err := repo.db.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	
+	return users, nil
+}
+
+func (repo *Repository) GetUser(userID int64) (model.User, error) {
+	var user model.User
+	if err := repo.db.Where("user_id", userID).First(&user).Error; if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
+}
+
+func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	result := tx.Create(&newUser)
+
+	if err := result.Error; err != nil {
+		tx.RollBack()
+		return model.User{}, nil
+	}
+
+	resultValue := result.Value.(model.User)
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return model.User{}, err
+	}
+
+	return resultValue, nil
+}
+
+func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
+	var user model.User
+
+	if err := repo.db.Where("user_id", updatedUser.UserID).Find(&user).Error; err != nil {
+		return model.Artist{}, err
+	}
+
+	if err := repo.db.Model(&user).Updates(updatedUser).Error; err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
+}
+
+func (repo *Repository) DeleteUser(userID int64) (model.User, error) {
+	if err := repo.db.Where("user_id", userID).Delete(&model.User{}).Error; err != nil {
 		return err
 	}
 
