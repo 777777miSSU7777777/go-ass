@@ -229,6 +229,56 @@ func (repo *Repository) DeletePlaylist(playlistID int64) error {
 	return nil
 }
 
+func (repo *Repository) AddTracksToPlaylist(playlistID int64, tracksID ...int64) error {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	for _, trackID := range tracksID {
+		playlistTracks := model.PlaylistTracks{ playlistID: playlistID, trackID: trackID }
+
+		err := repo.db.Create(&playlistTracks).Error; if err != nil {
+			tx.RollBack()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) DeleteTracksFromPlaylist(playlistID int64, tracksID ...int64) error {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	for _, trackID := range tracksID {
+		err := repo.db.Delete(&model.PlaylistTracks{ playlistID: playlistID, trackID: trackID }).Error; if err != nil {
+			tx.RollBack()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	return nil
+}
+
 func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 	var tracks []model.Track
 	if err := repo.db.Find(&tracks).Error; err != nil {
@@ -360,6 +410,107 @@ func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
 
 func (repo *Repository) DeleteUser(userID int64) (model.User, error) {
 	if err := repo.db.Where("user_id", userID).Delete(&model.User{}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) AddTracksToUserList(userID int64, tracksID ...int64) error {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+
+	for _, trackID := range tracksID {
+		userTracks := model.UserTracks{ userID: userID, trackID: trackID }
+	
+		err := repo.db.Create(&userTracks).Error; if err != nil {
+			tx.RollBack()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) DeleteTracksFromUserList(userID int64, tracksID ...) {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	for _, trackID := range tracksID {
+		err := repo.db.Delete(&model.UserTracks{ userID: userID, trackID: trackID }).Error; if err != nil {
+			tx.RollBack()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) AddPlaylistsToUserList(userID int64, playlistsID ...int64) error {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	for _, playlistID := range playlistsID {
+		userPlaylists := model.UserPlaylists{ userID: userID, playlistID: playlistID }
+
+		err := repo.db.Create(&userPlaylists).Error; if err != nil {
+			tx.RollBack()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) DeletePlaylistsFromUserList(userID int64, playlistsID ...int64) error {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
+	for _, playlistID := range playlistsID {
+		err := repo.db.Delete(&model.UserPlaylists{ userID: userID, playlistID: playlistID }).Error; if err != nil {
+			tx.RollBack()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.RollBack()
 		return err
 	}
 
