@@ -1,5 +1,10 @@
 package api
 
+type ErrorResponse struct {
+	// Type  string `json:"type"`
+	Error string `json:"error"`
+}
+
 type TrackResponse struct {
 	ID     string `json:"id"`
 	Author string `json:"author"`

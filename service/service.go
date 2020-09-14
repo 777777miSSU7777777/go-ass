@@ -9,9 +9,11 @@ import (
 
 	"github.com/777777miSSU7777777/go-ass/model"
 	"github.com/777777miSSU7777777/go-ass/repository"
+	"github.com/777777miSSU7777777/go-ass/helper"
 )
 
 var UserCredentialsAreInvalidError = fmt.Errorf("user credentials are invalid error")
+
 
 type Service struct {
 	repo repository.Repository
@@ -21,13 +23,13 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (s Service) AddTrack(author, title, uploadedByID string) (model.Track, error) {
+func (s Service) AddTrack(author, title, uploadedByID string, uploadTrack helper.UploadTrackCallback) (model.Track, error) {
 	err := model.ValidateTrack(author, title)
 	if err != nil {
 		return model.Track{}, err
 	}
 
-	id, err := s.repo.AddTrack(author, title, uploadedByID)
+	id, err := s.repo.AddTrack(author, title, uploadedByID, uploadTrack)
 	if err != nil {
 		return model.Track{}, err
 	}

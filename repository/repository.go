@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/777777miSSU7777777/go-ass/model"
+	"github.com/777777miSSU7777777/go-ass/helper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -36,24 +37,49 @@ type JWTPayload struct {
 	jwt.StandardClaims
 }
 
-func (r Repository) AddTrack(author, title, uploadedByID string) (string, error) {
-	uploadedByObjectID, err := primitive.ObjectIDFromHex(uploadedByID)
-	if err != nil {
-		return "", fmt.Errorf("add track error: %v", err)
-	}
-	track := model.Track{Author: author, Title: title, UploadedByID: uploadedByObjectID}
+func (r Repository) AddTrack(author, title, uploadedByID string, uploadTrack helper.UploadTrackCallback) (string, error) {
+	var newTrackID string
+	err := r.db.Client().UseSession(context.TODO(), func(sessionContext mongo.SessionContext) error {
+		err := sessionContext.StartTransaction(); 
+		if err != nil {
+			return fmt.Errorf("add new track error: %v", err)
+		}
 
-	addTrackResult, err := r.db.Collection("tracks").InsertOne(context.TODO(), track)
+		uploadedByObjectID, err := primitive.ObjectIDFromHex(uploadedByID)
+		if err != nil {
+			return fmt.Errorf("add new track error: %v", err)
+		}
+		track := model.Track{Author: author, Title: title, UploadedByID: uploadedByObjectID}
+	
+		addTrackResult, err := r.db.Collection("tracks").InsertOne(sessionContext, track)
+		if err != nil {
+			sessionContext.AbortTransaction(sessionContext)
+			return fmt.Errorf("add new track error: %v", err)
+		}
+
+		newTrackID = addTrackResult.InsertedID.(primitive.ObjectID).Hex()
+
+		err = uploadTrack(newTrackID)
+		if err != nil {
+			sessionContext.AbortTransaction(sessionContext)
+			return fmt.Errorf("add new track error: %v", err)
+		}
+	
+		_, err = r.db.Collection("users").UpdateOne(sessionContext, bson.M{"_id": uploadedByObjectID}, bson.M{"$push": bson.M{"tracklist": addTrackResult.InsertedID}})
+		if err != nil {
+			sessionContext.AbortTransaction(sessionContext)
+			return fmt.Errorf("add new track error: %v", err)
+		}
+
+		sessionContext.CommitTransaction(sessionContext);
+		return nil
+	})
+
 	if err != nil {
-		return "", fmt.Errorf("add track error: %v", err)
+		return "", err
 	}
 
-	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": uploadedByObjectID}, bson.M{"$push": bson.M{"tracklist": addTrackResult.InsertedID}})
-	if err != nil {
-		return "", fmt.Errorf("add track error: %v", err)
-	}
-
-	return addTrackResult.InsertedID.(primitive.ObjectID).Hex(), nil
+	return newTrackID, nil
 }
 
 func (r Repository) GetAllTracks() ([]model.Track, error) {
@@ -250,14 +276,7 @@ func (r Repository) DeleteUserByID(id string) (model.User, error) {
 }
 
 func (r Repository) AddRefreshToken(id string) (string, error) {
-	customClaims := JWTPayload{
-		id,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * time.Duration(5184000)).Unix(),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
-	signedToken, err := token.SignedString([]byte(SecretKey))
+	refreshToken, err := helper.SignToken(id, helper.RefreshTokenType, helper.DefaultRefreshExp, helper.DefaultSecretKey)
 	if err != nil {
 		return "", fmt.Errorf("add refresh token error: %v", err)
 	}
@@ -267,7 +286,7 @@ func (r Repository) AddRefreshToken(id string) (string, error) {
 		return "", fmt.Errorf("add refresh token error: %v", err)
 	}
 
-	addRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"refresh_tokens": signedToken}})
+	addRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": userObjectID}, bson.M{"$push": bson.M{"refresh_tokens": refreshToken}})
 
 	if err != nil {
 		return "", fmt.Errorf("add refresh token error: %v", err)
@@ -276,34 +295,23 @@ func (r Repository) AddRefreshToken(id string) (string, error) {
 		return "", RefreshTokenNotFoundError
 	}
 
-	return signedToken, nil
+	return refreshToken, nil
 }
 
 func (r Repository) UpdateRefreshToken(token string) (string, error) {
-	parsedToken, err := jwt.ParseWithClaims(token, &JWTPayload{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(SecretKey), nil
-	})
-
+	tokenPayload, err := helper.VerifyToken(token, helper.DefaultSecretKey)
 	if err != nil {
 		return "", fmt.Errorf("update refresh token error: %v", err)
 	}
 
-	payload := parsedToken.Claims.(*JWTPayload)
+	userID := tokenPayload["user_id"].(string)
 
-	customClaims := JWTPayload{
-		payload.ID,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * time.Duration(5184000)).Unix(),
-		},
-	}
-
-	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
-	signedToken, err := newToken.SignedString([]byte(SecretKey))
+	refreshToken, err := helper.SignToken(userID, helper.RefreshTokenType, helper.DefaultRefreshExp, helper.DefaultSecretKey)
 	if err != nil {
 		return "", fmt.Errorf("update refresh token error: %v", err)
 	}
 
-	updateRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$set": bson.M{"refresh_tokens.$": signedToken}})
+	updateRefreshTokenResult, err := r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"refresh_tokens": bson.M{"$elemMatch": bson.M{"$eq": token}}}, bson.M{"$set": bson.M{"refresh_tokens.$": refreshToken }})
 
 	if err != nil {
 		return "", fmt.Errorf("update refresh token error: %v", err)
@@ -313,7 +321,7 @@ func (r Repository) UpdateRefreshToken(token string) (string, error) {
 		return "", RefreshTokenNotFoundError
 	}
 
-	return signedToken, nil
+	return refreshToken, nil
 }
 
 func (r Repository) DeleteRefreshToken(token string) error {
@@ -411,33 +419,52 @@ func (r Repository) RemoveTrackFromUserTrackList(userID, trackID string) error {
 }
 
 func (r Repository) CreateNewPlaylist(title, createdByID string, trackList []string) (string, error) {
-	createdByObjectID, err := primitive.ObjectIDFromHex(createdByID)
-	if err != nil {
-		return "", fmt.Errorf("create new playlist error: %v", err)
-	}
+	var newPlaylistID string
+	err := r.db.Client().UseSession(context.TODO(), func(sessionContext mongo.SessionContext) error {
+		err := sessionContext.StartTransaction()
 
-	trackObjectList := []primitive.ObjectID{}
-	for _, trackID := range trackList {
-		trackOjectID, err := primitive.ObjectIDFromHex(trackID)
+		createdByObjectID, err := primitive.ObjectIDFromHex(createdByID)
 		if err != nil {
-			return "", fmt.Errorf("create new playlist error: %v", err)
+			sessionContext.AbortTransaction(sessionContext)
+			return fmt.Errorf("create new playlist error: %v", err)
 		}
-		trackObjectList = append(trackObjectList, trackOjectID)
-	}
+	
+		trackObjectList := []primitive.ObjectID{}
+		for _, trackID := range trackList {
+			trackOjectID, err := primitive.ObjectIDFromHex(trackID)
+			if err != nil {
+				sessionContext.AbortTransaction(sessionContext)
+				return fmt.Errorf("create new playlist error: %v", err)
+			}
+			trackObjectList = append(trackObjectList, trackOjectID)
+		}
+	
+		newPlaylist := model.Playlist{Title: title, TrackList: trackObjectList, CreatedByID: createdByObjectID}
+	
+		createNewPlaylistResult, err := r.db.Collection("playlists").InsertOne(sessionContext, newPlaylist)
+		if err != nil {
+			sessionContext.AbortTransaction(sessionContext)
+			return fmt.Errorf("create new playlist error: %v", err)
+		}
 
-	newPlaylist := model.Playlist{Title: title, TrackList: trackObjectList, CreatedByID: createdByObjectID}
+		newPlaylistID = createNewPlaylistResult.InsertedID.(primitive.ObjectID).Hex()
+	
+		_, err = r.db.Collection("users").UpdateOne(sessionContext, bson.M{"_id": createdByObjectID}, bson.M{"$push": bson.M{"playlists": createNewPlaylistResult.InsertedID}})
+		if err != nil {
+			sessionContext.AbortTransaction(sessionContext)
+			return fmt.Errorf("create new playlist error: %v", err)
+		}
 
-	createNewPlaylistResult, err := r.db.Collection("playlists").InsertOne(context.TODO(), newPlaylist)
+		sessionContext.CommitTransaction(sessionContext)
+		return nil
+	})
+
 	if err != nil {
-		return "", fmt.Errorf("create new playlist error: %v", err)
+		return "", err
 	}
 
-	_, err = r.db.Collection("users").UpdateOne(context.TODO(), bson.M{"_id": createdByObjectID}, bson.M{"$push": bson.M{"playlists": createNewPlaylistResult.InsertedID}})
-	if err != nil {
-		return "", fmt.Errorf("create new playlist error: %v", err)
-	}
 
-	return createNewPlaylistResult.InsertedID.(primitive.ObjectID).Hex(), nil
+	return newPlaylistID, nil
 }
 
 func (r Repository) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {

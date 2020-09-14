@@ -6,16 +6,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber"
 
 	"github.com/777777miSSU7777777/go-ass/model"
 	"github.com/777777miSSU7777777/go-ass/repository"
 	"github.com/777777miSSU7777777/go-ass/service"
 )
 
-type ErrorResponse struct {
-	Type  string `json:"type"`
-	Error string `json:"error"`
-}
 
 var BodyParseError = "BODY PARSE ERROR"
 var IDParseError = "ID PARSE ERROR"
@@ -32,37 +29,29 @@ func writeError(w http.ResponseWriter, statusCode int, errType string, err error
 
 type API struct {
 	svc service.Service
-	m   FileManager
+	fileManager   FileManager
 }
 
 func NewApi(svc service.Service, m FileManager) API {
 	return API{svc, m}
 }
 
-func (a API) AddTrack(w http.ResponseWriter, r *http.Request) {
-	author, title := r.FormValue("author"), r.FormValue("title")
+func (api API) AddTrack(ctx *fiber.Ctx) {
+	author, title := ctx.FormValue("author"), ctx.FormValue("title")
+	audiofileHeader, err := ctx.FormFile("audiofile")
+	userID := ctx.Locals("userID")
 
-	userID := r.Context().Value("userID").(string)
-
-	newTrack, err := a.svc.AddTrack(author, title, userID)
-	if err != nil {
-		if err.Error() == model.TrackAuthorEmpty.Error() || err.Error() == model.TrackTitleEmpty.Error() {
-			writeError(w, 400, ValidationError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		_ = a.m.Delete(w, newTrack.ID.Hex())
-		return
-	} else {
-		err = a.m.Upload(w, r, newTrack.ID.Hex())
-		if err != nil {
-			_ = a.svc.DeleteTrackByID(newTrack.ID.Hex())
-			_ = a.m.Delete(w, newTrack.ID.Hex())
-			return
-		}
+	uploadTrackCallback := func(trackID string) helper.uploadTrackCallback {
+		return api.fileManager.Upload(audiofileHeader, trackID)
 	}
 
-	_ = json.NewEncoder(w).Encode(AddTrackResponse{newTrack.ID.Hex(), newTrack.Author, newTrack.Title})
+	newTrack, err := api.svc.AddTrack(author, title, userID, uploadTrackCallback)
+	if err != nil {
+		ctx.Status(401).JSON(ErrorResponse{ Error: err.Error() })
+		return
+	}
+
+	ctx.Status(200).JSON(AddTrackResponse{ID: newTrack.})
 }
 
 func (a API) GetAllTracks(w http.ResponseWriter, r *http.Request) {
