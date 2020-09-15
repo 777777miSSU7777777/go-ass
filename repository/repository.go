@@ -86,7 +86,7 @@ func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, erro
 func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, error) {
 	var artist model.Artist
 
-	if err := repo.db.Where("artist_id", updatedArtist.ArtistID).Find(&artist).Error; err != nil {
+	if err := repo.db.Where(model.Artist{ ArtistID: updatedArtist.ArtistID }).Find(&artist).Error; err != nil {
 		return model.Artist{}, err
 	}
 
@@ -152,7 +152,7 @@ func (repo *Repository) AddNewGenre(newGenre model.Genre) (model.Genre, error) {
 func (repo *Repository) UpdateGenre(updatedGenre model.Genre) (model.Genre, error) {
 	var genre model.Genre
 
-	if err := repo.db.Where("genre_id", updatedGenre.GenreID).Find(&genre).Error; err != nil {
+	if err := repo.db.Where(&model.Genre{ GenreID: updatedGenre.GenreID }).Find(&genre).Error; err != nil {
 		return model.Genre{}, err
 	}
 
@@ -210,7 +210,7 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Playlist, error) {
 	var playlist model.Playlist
 
-	if err := repo.db.Where("playlist_id", updatedPlaylist.PlaylistID).Find(&playlist).Error; err != nil {
+	if err := repo.db.Where(&model.Playlist{ PlaylistID: updatedPlaylist.PlaylistID }).Find(&playlist).Error; err != nil {
 		return model.Playlist{}, err
 	}
 
@@ -315,6 +315,14 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrac
 
 	resultValue := result.Value.(model.Track)
 
+	if (resultValue.GenreID) {
+		genreTracks := model.GenreTracks{ GenreID: resultValue.GenreID, TrackID: resultValue.TrackID }
+		if err := tx.Create(&genreTracks).Error; if err != nil {
+			tx.RollBack();
+			return model.Track{}, err
+		}
+	}
+
 	if err := uploadTrack(); err != nil {
 		tx.Rollback();
 		return model.Track{}, err
@@ -331,7 +339,7 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrac
 func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, error) {
 	var track model.Track
 
-	if err := repo.db.Where("track_id", updatedTrack.TrackID).Find(&track).Error; err != nil {
+	if err := repo.db.Where(&model.Track{ TrackID: updatedTrack.TrackID }).Find(&track).Error; err != nil {
 		return model.Track{}, err
 	}
 
@@ -343,7 +351,31 @@ func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, erro
 }
 
 func (repo *Repository) DeleteTrack(trackID int64) error {
+	tx := repo.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.RollBack()
+		}
+	}()
+
 	if err := repo.db.Delete(&model.Track{ TrackID: trackID }).Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	if err = repo.db.Delete(&model.GenreTrack{ TrackID: trackID }).Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	if err = repo.db.Delete(&model.UserTracks{ TrackID: trackID }).Error; err != nil {
+		tx.RollBack()
+		return err
+	}
+
+	if err = repo.db.Delete(&model.PlaylistTracks{ TrackID: trackID }).Error; err != nil {
+		tx.RollBack()
 		return err
 	}
 
@@ -397,7 +429,7 @@ func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
 	var user model.User
 
-	if err := repo.db.Where("user_id", updatedUser.UserID).Find(&user).Error; err != nil {
+	if err := repo.db.Where(&model.User{ UserID: updatedUser.UserID }).Find(&user).Error; err != nil {
 		return model.Artist{}, err
 	}
 
