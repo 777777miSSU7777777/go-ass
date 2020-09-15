@@ -9,6 +9,7 @@ import (
 
 	"github.com/777777miSSU7777777/go-ass/model"
 	"github.com/777777miSSU7777777/go-ass/repository"
+	"github.com/777777miSSU7777777/go-ass/helper"
 )
 
 var UserCredentialsAreInvalidError = fmt.Errorf("user credentials are invalid error")
@@ -21,36 +22,9 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (s Service) AddTrack(author, title, uploadedByID string) (model.Track, error) {
-	err := model.ValidateTrack(author, title)
-	if err != nil {
-		return model.Track{}, err
-	}
-
-	id, err := s.repo.AddTrack(author, title, uploadedByID)
-	if err != nil {
-		return model.Track{}, err
-	}
-
-	audio, err := s.repo.GetTrackByID(id)
-	if err != nil {
-		return model.Track{}, err
-	}
-
-	return audio, nil
-}
-
-func (s Service) GetAllTracks() ([]model.Track, error) {
-	tracks, err := s.repo.GetAllTracks()
-	if err != nil {
-		return nil, err
-	}
-
-	return tracks, nil
-}
-
-func (s Service) GetTrackByID(trackID string) (model.Track, error) {
-	track, err := s.repo.GetTrackByID(trackID)
+func (service Service) AddTrack(title string, artistID int64, genreID int64, uploadedByID int64) (model.Track, error) {
+	newTrack := model.Track{ TrackTitle: title, ArtistID: artistID, GenreID: genreID, UploadedByID: uploadedByID }
+	track, err := service.AddNewTrack(newTrack)
 	if err != nil {
 		return model.Track{}, err
 	}
@@ -58,8 +32,8 @@ func (s Service) GetTrackByID(trackID string) (model.Track, error) {
 	return track, nil
 }
 
-func (s Service) GetTracksByKey(key string) ([]model.Track, error) {
-	tracks, err := s.repo.GetTracksByKey(key)
+func (service Service) GetAllTracks() ([]model.Track, error) {
+	tracks, err := service.repo.GetAllTracks()
 	if err != nil {
 		return nil, err
 	}
@@ -67,18 +41,8 @@ func (s Service) GetTracksByKey(key string) ([]model.Track, error) {
 	return tracks, nil
 }
 
-func (s Service) UpdateTrackByID(trackID string, author, title string) (model.Track, error) {
-	err := model.ValidateTrack(author, title)
-	if err != nil {
-		return model.Track{}, err
-	}
-
-	err = s.repo.UpdateTrackByID(trackID, author, title)
-	if err != nil {
-		return model.Track{}, err
-	}
-
-	track, err := s.repo.GetTrackByID(trackID)
+func (service Service) GetTrackByID(trackID int64) (model.Track, error) {
+	track, err := service.repo.GetTrack(trackID)
 	if err != nil {
 		return model.Track{}, err
 	}
@@ -86,8 +50,18 @@ func (s Service) UpdateTrackByID(trackID string, author, title string) (model.Tr
 	return track, nil
 }
 
-func (s Service) DeleteTrackByID(trackID string) error {
-	err := s.repo.DeleteTrackByID(trackID)
+func (service Service) UpdateTrackByID(trackID int64, title string, artistID int64, genreID int64) (model.Track, error) {
+	updatedTrack := model.Track{ TrackID: trackID, TrackTitle: title, ArtistID: artistID, GenreID: genreID }
+	track, err := service.repo.UpdateTrack(updatedTrack)
+	if err != nil {
+		return model.Track{}, err
+	}
+
+	return track, nil
+}
+
+func (service Service) DeleteTrackByID(trackID int64) error {
+	err := service.repo.DeleteTrack(trackID)
 	if err != nil {
 		return err
 	}
@@ -95,87 +69,10 @@ func (s Service) DeleteTrackByID(trackID string) error {
 	return nil
 }
 
-func (s Service) SignUp(email, name, password string) error {
-	err := model.ValidateUser(email, name, password)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.repo.AddUser(email, name, password)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s Service) SignIn(email, password string) (string, string, error) {
-	user, err := s.repo.GetUserByEmail(email)
-	if err != nil {
-		return "", "", err
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		if err == bcrypt.ErrMismatchedHashAndPassword {
-			return "", "", UserCredentialsAreInvalidError
-		}
-		return "", "", err
-	} else {
-		customClaims := repository.JWTPayload{
-			user.ID.Hex(),
-			jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Second * time.Duration(1800)).Unix(),
-			},
-		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
-		accessToken, err := token.SignedString([]byte(repository.SecretKey))
-		if err != nil {
-			return "", "", fmt.Errorf("error while signing user refresh token: %v", err)
-		}
-
-		refreshToken, err := s.repo.AddRefreshToken(user.ID.Hex())
-		if err != nil {
-			return "", "", err
-		}
-
-		return accessToken, refreshToken, nil
-	}
-}
-
-func (s Service) RefreshToken(token string) (string, string, error) {
-	jwtToken, err := jwt.ParseWithClaims(token, &repository.JWTPayload{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(repository.SecretKey), nil
-	})
-
-	if err != nil {
-		return "", "", fmt.Errorf("error while parsing refresh token: %v", err)
-	}
-
-	payload := jwtToken.Claims.(*repository.JWTPayload)
-
-	customClaims := repository.JWTPayload{
-		payload.ID,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * time.Duration(1800)).Unix(),
-		},
-	}
-	unsignedToken := jwt.NewWithClaims(jwt.SigningMethodHS256, customClaims)
-	accessToken, err := unsignedToken.SignedString([]byte(repository.SecretKey))
-	if err != nil {
-		return "", "", fmt.Errorf("error while signing user access token: %v", err)
-	}
-
-	refreshToken, err := s.repo.UpdateRefreshToken(token)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessToken, refreshToken, nil
-}
-
-func (s Service) SignOut(token string) error {
-	err := s.repo.DeleteRefreshToken(token)
+func (service Service) SignUp(email string, username string, password string) error {
+	hashedPassword := helper.HashPassword(password)
+	newUser := model.User{ Email: email, Username: username,  Password: hashedPassword, Role: helper.UserRole }
+	_, err = service.repo.AddNewUser(newUser)
 	if err != nil {
 		return err
 	}
@@ -183,123 +80,53 @@ func (s Service) SignOut(token string) error {
 	return nil
 }
 
-func (s Service) GetUserTrackList(userID string) ([]model.Track, error) {
-	userTrackList, err := s.repo.GetUserTrackList(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return userTrackList, nil
+func (service Service) SignIn(email string, password string) (string, string, error) {
+	return "", "", nil
 }
 
-func (s Service) AddTrackToUserTrackList(userID, trackID string) ([]model.Track, error) {
-	err := s.repo.AddTrackToUserTrackList(userID, trackID)
-	if err != nil {
-		return nil, err
-	}
-
-	userTrackList, err := s.repo.GetUserTrackList(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return userTrackList, nil
+func (service Service) RefreshToken(token string) (string, string, error) {
+	return "", "", nil
 }
 
-func (s Service) RemoveTrackFromUserTrackList(userID, trackID string) ([]model.Track, error) {
-	err := s.repo.RemoveTrackFromUserTrackList(userID, trackID)
-	if err != nil {
-		return nil, err
-	}
-
-	userTrackList, err := s.repo.GetUserTrackList(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return userTrackList, nil
-}
-
-func (s Service) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {
-	playlists, playlistsTracks, err := s.repo.GetAllPlaylists()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return playlists, playlistsTracks, nil
-}
-
-func (s Service) GetUserPlaylists(userID string) ([]model.Playlist, [][]model.Track, error) {
-	playlists, playlistsTracks, err := s.repo.GetUserPlaylists(userID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return playlists, playlistsTracks, nil
-}
-
-func (s Service) CreateNewPlaylist(title, createdByID string, trackList []string) (model.Playlist, []model.Track, error) {
-	err := model.ValidatePlaylist(title)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
-
-	id, err := s.repo.CreateNewPlaylist(title, createdByID, trackList)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
-
-	playlist, playlistTracks, err := s.repo.GetPlaylistByID(id)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
-
-	return playlist, playlistTracks, nil
-}
-
-func (s Service) GetPlaylistByID(playlistID string) (model.Playlist, []model.Track, error) {
-	playlist, playlistTracks, err := s.repo.GetPlaylistByID(playlistID)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
-
-	return playlist, playlistTracks, nil
-}
-
-func (s Service) DeletePlaylistByID(playlistID, createdByID string) error {
-	err := s.repo.DeletePlaylistByID(playlistID, createdByID)
-
-	if err != nil {
-		return err
-	}
-
+func (service Service) SignOut(token string) error {
 	return nil
 }
 
-func (s Service) AddTracksToPlaylist(userID, playlistID string, trackList []string) (model.Playlist, []model.Track, error) {
-	err := s.repo.AddTracksToPlaylist(userID, playlistID, trackList)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
-
-	playlist, playlistTracks, err := s.repo.GetPlaylistByID(playlistID)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
-
-	return playlist, playlistTracks, nil
+func (service Service) GetUserTrackList(userID int64) ([]model.Track, error) {
+	return nil, nil
 }
 
-func (s Service) RemoveTracksFromPlaylist(userID, playlistID string, trackList []string) (model.Playlist, []model.Track, error) {
-	err := s.repo.RemoveTracksFromPlaylist(userID, playlistID, trackList)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
+func (service Service) AddTrackToUserTrackList(userID int64, trackID int64) ([]model.Track, error) {
+	return nil, nil
+}
 
-	playlist, playlistTracks, err := s.repo.GetPlaylistByID(playlistID)
-	if err != nil {
-		return model.Playlist{}, nil, err
-	}
+func (service Service) RemoveTrackFromUserTrackList(userID int64, trackID int64) ([]model.Track, error) {
+}
 
-	return playlist, playlistTracks, nil
+func (service Service) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {
+	return nil, nil, nil
+}
+
+func (service Service) GetUserPlaylists(userID int64) ([]model.Playlist, [][]model.Track, error) {
+	return nil
+}
+
+func (service Service) CreateNewPlaylist(title string, createdByID int64, trackList []int64) (model.Playlist, []model.Track, error) {
+	return model.Playlist{}, nil, nil
+}
+
+func (service Service) GetPlaylistByID(playlistID int64) (model.Playlist, []model.Track, error) {
+	return model.Playlist{}, nil, nil
+}
+
+func (service Service) DeletePlaylistByID(playlistID int64, createdByID int64) error {
+	return nil
+}
+
+func (service Service) AddTracksToPlaylist(userID int64, playlistID int64, trackList []string) (model.Playlist, []model.Track, error) {
+	return model.Playlist{}, nil, nil
+}
+
+func (service Service) RemoveTracksFromPlaylist(userID int64, playlistID int64, trackList []string) (model.Playlist, []model.Track, error) {
+	return model.Playlist{}, nil, nil
 }
