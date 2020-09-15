@@ -36,21 +36,23 @@ func NewRepository(dbType string, connectionString string) *Repository {
 
 	fmt.Println("Database migrated")
 
-	return &Repository{ db: db }
+	return &Repository{db: db}
 }
 
 func (repo *Repository) GetAllArtists() ([]model.Artist, error) {
 	var artists []model.Artist
-	if err := repo.db.Find(&artists).Error; err != nil {
+	err := repo.db.Find(&artists).Error
+	if err != nil {
 		return nil, err
 	}
-	
+
 	return artists, nil
 }
 
 func (repo *Repository) GetArtist(artistID int64) (model.Artist, error) {
 	var artist model.Artist
-	if err := repo.db.Where(&model.Artist{ ArtistID: artistID }).First(&artist).Error; if err != nil {
+	err := repo.db.Where(&model.Artist{ArtistID: artistID}).First(&artist).Error
+	if err != nil {
 		return model.Artist{}, err
 	}
 
@@ -61,22 +63,25 @@ func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, erro
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	result := tx.Create(&newArtist)
 
-	if err := result.Error; err != nil {
+	err := result.Error
+	if err != nil {
 		tx.Rollback()
 		return model.Artist{}, err
 	}
 
 	resultValue := result.Value.(model.Artist)
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return model.Artist{}, err
 	}
 
@@ -86,11 +91,13 @@ func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, erro
 func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, error) {
 	var artist model.Artist
 
-	if err := repo.db.Where(model.Artist{ ArtistID: updatedArtist.ArtistID }).Find(&artist).Error; err != nil {
+	err := repo.db.Where(model.Artist{ArtistID: updatedArtist.ArtistID}).Find(&artist).Error
+	if err != nil {
 		return model.Artist{}, err
 	}
 
-	if err := repo.db.Model(&artist).Updates(updatedArtist).Error; err != nil {
+	err = repo.db.Model(&artist).Updates(updatedArtist).Error
+	if err != nil {
 		return model.Artist{}, err
 	}
 
@@ -98,7 +105,8 @@ func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, 
 }
 
 func (repo *Repository) DeleteArtist(artistID int64) error {
-	if err := repo.db.Delete(&model.Artist{ ArtistID: artistID }).Error; err != nil {
+	err := repo.db.Delete(&model.Artist{ArtistID: artistID}).Error
+	if err != nil {
 		return err
 	}
 
@@ -107,7 +115,8 @@ func (repo *Repository) DeleteArtist(artistID int64) error {
 
 func (repo *Repository) GetAllGenres() ([]model.Genre, error) {
 	var genres []model.Genre
-	if err := repo.db.Find(&genres).Error; err != nil {
+	err := repo.db.Find(&genres).Error
+	if err != nil {
 		return nil, err
 	}
 
@@ -116,7 +125,8 @@ func (repo *Repository) GetAllGenres() ([]model.Genre, error) {
 
 func (repo *Repository) GetGenre(genreID int64) (model.Genre, error) {
 	var genre model.Genre
-	if err := repo.db.Where(&model.Genre{ GenreID: genreID }).First(&genre).Error; if err != nil {
+	err := repo.db.Where(&model.Genre{GenreID: genreID}).First(&genre).Error
+	if err != nil {
 		return model.Genre{}, err
 	}
 
@@ -127,22 +137,25 @@ func (repo *Repository) AddNewGenre(newGenre model.Genre) (model.Genre, error) {
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	result := tx.Create(&newGenre)
 
-	if err := result.Error; err != nil {
+	err := result.Error
+	if err != nil {
 		tx.Rollback()
 		return model.Genre{}, err
 	}
 
 	resultValue := result.Value.(model.Genre)
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return model.Genre{}, err
 	}
 
@@ -152,20 +165,23 @@ func (repo *Repository) AddNewGenre(newGenre model.Genre) (model.Genre, error) {
 func (repo *Repository) UpdateGenre(updatedGenre model.Genre) (model.Genre, error) {
 	var genre model.Genre
 
-	if err := repo.db.Where(&model.Genre{ GenreID: updatedGenre.GenreID }).Find(&genre).Error; err != nil {
+	err := repo.db.Where(&model.Genre{GenreID: updatedGenre.GenreID}).Find(&genre).Error
+	if err != nil {
 		return model.Genre{}, err
 	}
 
-	if err := repo.db.Model(&genre).Updates(updatedGenre).Error; err != nil {
+	err = repo.db.Model(&genre).Updates(updatedGenre).Error
+	if err != nil {
 		return model.Genre{}, err
 	}
 
 	return genre, nil
 }
 
-func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) (model.Playlist, error) {
+func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) ([]model.Playlist, error) {
 	var playlists []model.Playlist
-	if err := repo.db.Find(&playlists).Error; err != nil {
+	err := repo.db.Find(&playlists).Error
+	if err != nil {
 		return nil, err
 	}
 
@@ -174,7 +190,8 @@ func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) (model.P
 
 func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
 	var playlist model.Playlist
-	if err := repo.db.Where(&model.Playlist{ PlaylistID: playlistID }).First(&playlist).Error; if err != nil {
+	err := repo.db.Where(&model.Playlist{PlaylistID: playlistID}).First(&playlist).Error
+	if err != nil {
 		return model.Playlist{}, err
 	}
 
@@ -185,22 +202,25 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	result := tx.Create(&newPlaylist)
 
-	if err := result.Error; err != nil {
-		tx.RollBack()
+	err := result.Error
+	if err != nil {
+		tx.Rollback()
 		return model.Playlist{}, err
 	}
 
 	resultValue := result.Value.(model.Playlist)
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return model.Playlist{}, err
 	}
 
@@ -210,11 +230,13 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Playlist, error) {
 	var playlist model.Playlist
 
-	if err := repo.db.Where(&model.Playlist{ PlaylistID: updatedPlaylist.PlaylistID }).Find(&playlist).Error; err != nil {
+	err := repo.db.Where(&model.Playlist{PlaylistID: updatedPlaylist.PlaylistID}).Find(&playlist).Error
+	if err != nil {
 		return model.Playlist{}, err
 	}
 
-	if err := repo.db.Model(&playlist).Updates(updatedPlaylist).Error; err != nil {
+	err = repo.db.Model(&playlist).Updates(updatedPlaylist).Error
+	if err != nil {
 		return model.Playlist{}, err
 	}
 
@@ -222,7 +244,8 @@ func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Pl
 }
 
 func (repo *Repository) DeletePlaylist(playlistID int64) error {
-	if err := repo.db.Delete(&model.Playlist{ PlaylistID: playlistID }).Error; err != nil {
+	err := repo.db.Delete(&model.Playlist{PlaylistID: playlistID}).Error
+	if err != nil {
 		return err
 	}
 
@@ -233,22 +256,25 @@ func (repo *Repository) AddTracksToPlaylist(playlistID int64, tracksID ...int64)
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	for _, trackID := range tracksID {
-		playlistTracks := model.PlaylistTracks{ playlistID: playlistID, trackID: trackID }
+		playlistTracks := model.PlaylistTracks{PlaylistID: playlistID, TrackID: trackID}
 
-		err := repo.db.Create(&playlistTracks).Error; if err != nil {
-			tx.RollBack()
+		err := repo.db.Create(&playlistTracks).Error
+		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -259,20 +285,23 @@ func (repo *Repository) DeleteTracksFromPlaylist(playlistID int64, tracksID ...i
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	for _, trackID := range tracksID {
-		err := repo.db.Delete(&model.PlaylistTracks{ PlaylistID: playlistID, TrackID: trackID }).Error; if err != nil {
-			tx.RollBack()
+		err := repo.db.Delete(&model.PlaylistTracks{PlaylistID: playlistID, TrackID: trackID}).Error
+		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -281,7 +310,8 @@ func (repo *Repository) DeleteTracksFromPlaylist(playlistID int64, tracksID ...i
 
 func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 	var tracks []model.Track
-	if err := repo.db.Find(&tracks).Error; err != nil {
+	err := repo.db.Find(&tracks).Error
+	if err != nil {
 		return nil, err
 	}
 
@@ -290,46 +320,52 @@ func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 
 func (repo *Repository) GetTrack(trackID int64) (model.Track, error) {
 	var track model.Track
-	if err := repo.db.Where(&model.Track{ TrackID: trackID }).First(&track).Error; if err != nil {
+	err := repo.db.Where(&model.Track{TrackID: trackID}).First(&track).Error
+	if err != nil {
 		return model.Track{}, err
 	}
 
 	return track, nil
 }
 
-func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrackCallback) (model.Track, err) {
+func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrackCallback) (model.Track, error) {
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
-	result := tx.Create(&newTrack);
+	result := tx.Create(&newTrack)
 
-	if err := result.Error; err != nil {
-		tx.Rollback();
+	err := result.Error
+	if err != nil {
+		tx.Rollback()
 		return model.Track{}, err
 	}
 
 	resultValue := result.Value.(model.Track)
 
-	if (resultValue.GenreID) {
-		genreTracks := model.GenreTracks{ GenreID: resultValue.GenreID, TrackID: resultValue.TrackID }
-		if err := tx.Create(&genreTracks).Error; if err != nil {
-			tx.RollBack();
+	if resultValue.GenreID != 0 {
+		genreTracks := model.GenreTracks{GenreID: resultValue.GenreID, TrackID: resultValue.TrackID}
+		err := tx.Create(&genreTracks).Error
+		if err != nil {
+			tx.Rollback()
 			return model.Track{}, err
 		}
 	}
 
-	if err := uploadTrack(); err != nil {
-		tx.Rollback();
+	err = uploadTrack(resultValue.TrackID)
+	if err != nil {
+		tx.Rollback()
 		return model.Track{}, err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback();
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return model.Track{}, err
 	}
 
@@ -339,11 +375,13 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrac
 func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, error) {
 	var track model.Track
 
-	if err := repo.db.Where(&model.Track{ TrackID: updatedTrack.TrackID }).Find(&track).Error; err != nil {
+	err := repo.db.Where(&model.Track{TrackID: updatedTrack.TrackID}).Find(&track).Error
+	if err != nil {
 		return model.Track{}, err
 	}
 
-	if err := repo.db.Model(&track).Updates(updatedTrack).Error; err != nil {
+	err = repo.db.Model(&track).Updates(updatedTrack).Error
+	if err != nil {
 		return model.Track{}, err
 	}
 
@@ -354,28 +392,33 @@ func (repo *Repository) DeleteTrack(trackID int64) error {
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
-	if err := repo.db.Delete(&model.Track{ TrackID: trackID }).Error; err != nil {
-		tx.RollBack()
+	err := repo.db.Delete(&model.Track{TrackID: trackID}).Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	if err = repo.db.Delete(&model.GenreTrack{ TrackID: trackID }).Error; err != nil {
-		tx.RollBack()
+	err = repo.db.Delete(&model.GenreTracks{TrackID: trackID}).Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	if err = repo.db.Delete(&model.UserTracks{ TrackID: trackID }).Error; err != nil {
-		tx.RollBack()
+	err = repo.db.Delete(&model.UserTracks{TrackID: trackID}).Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	if err = repo.db.Delete(&model.PlaylistTracks{ TrackID: trackID }).Error; err != nil {
-		tx.RollBack()
+	err = repo.db.Delete(&model.PlaylistTracks{TrackID: trackID}).Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -384,16 +427,18 @@ func (repo *Repository) DeleteTrack(trackID int64) error {
 
 func (repo *Repository) GetAllUsers() ([]model.User, error) {
 	var users []model.User
-	if err := repo.db.Find(&users).Error; err != nil {
+	err := repo.db.Find(&users).Error
+	if err != nil {
 		return nil, err
 	}
-	
+
 	return users, nil
 }
 
 func (repo *Repository) GetUser(userID int64) (model.User, error) {
 	var user model.User
-	if err := repo.db.Where(&model.User{ UserID: userID }).First(&user).Error; if err != nil {
+	err := repo.db.Where(&model.User{UserID: userID}).First(&user).Error
+	if err != nil {
 		return model.User{}, err
 	}
 
@@ -404,22 +449,25 @@ func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	result := tx.Create(&newUser)
 
-	if err := result.Error; err != nil {
-		tx.RollBack()
+	err := result.Error
+	if err != nil {
+		tx.Rollback()
 		return model.User{}, nil
 	}
 
 	resultValue := result.Value.(model.User)
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return model.User{}, err
 	}
 
@@ -429,19 +477,22 @@ func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
 	var user model.User
 
-	if err := repo.db.Where(&model.User{ UserID: updatedUser.UserID }).Find(&user).Error; err != nil {
-		return model.Artist{}, err
+	err := repo.db.Where(&model.User{UserID: updatedUser.UserID}).Find(&user).Error
+	if err != nil {
+		return model.User{}, err
 	}
 
-	if err := repo.db.Model(&user).Updates(updatedUser).Error; err != nil {
+	err = repo.db.Model(&user).Updates(updatedUser).Error
+	if err != nil {
 		return model.User{}, err
 	}
 
 	return user, nil
 }
 
-func (repo *Repository) DeleteUser(userID int64) (model.User, error) {
-	if err := repo.db.Delete(&model.User{ UserID: userID }).Error; err != nil {
+func (repo *Repository) DeleteUser(userID int64) error {
+	err := repo.db.Delete(&model.User{UserID: userID}).Error
+	if err != nil {
 		return err
 	}
 
@@ -452,47 +503,52 @@ func (repo *Repository) AddTracksToUserList(userID int64, tracksID ...int64) err
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
-
 	for _, trackID := range tracksID {
-		userTracks := model.UserTracks{ userID: userID, trackID: trackID }
-	
-		err := repo.db.Create(&userTracks).Error; if err != nil {
-			tx.RollBack()
+		userTracks := model.UserTracks{UserID: userID, TrackID: trackID}
+
+		err := repo.db.Create(&userTracks).Error
+		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	return nil
 }
 
-func (repo *Repository) DeleteTracksFromUserList(userID int64, tracksID ...) {
+func (repo *Repository) DeleteTracksFromUserList(userID int64, tracksID ...int64) error {
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	for _, trackID := range tracksID {
-		err := repo.db.Delete(&model.UserTracks{ UserID: userID, TrackID: trackID }).Error; if err != nil {
-			tx.RollBack()
+		err := repo.db.Delete(&model.UserTracks{UserID: userID, TrackID: trackID}).Error
+		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -503,22 +559,25 @@ func (repo *Repository) AddPlaylistsToUserList(userID int64, playlistsID ...int6
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	for _, playlistID := range playlistsID {
-		userPlaylists := model.UserPlaylists{ userID: userID, playlistID: playlistID }
+		userPlaylists := model.UserPlaylists{UserID: userID, PlaylistID: playlistID}
 
-		err := repo.db.Create(&userPlaylists).Error; if err != nil {
-			tx.RollBack()
+		err := repo.db.Create(&userPlaylists).Error
+		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -529,20 +588,23 @@ func (repo *Repository) DeletePlaylistsFromUserList(userID int64, playlistsID ..
 	tx := repo.db.Begin()
 
 	defer func() {
-		if r := recover(); r != nil {
-			tx.RollBack()
+		r := recover()
+		if r != nil {
+			tx.Rollback()
 		}
 	}()
 
 	for _, playlistID := range playlistsID {
-		err := repo.db.Delete(&model.UserPlaylists{ UserID: userID, playlistID: PlaylistID }).Error; if err != nil {
-			tx.RollBack()
+		err := repo.db.Delete(&model.UserPlaylists{UserID: userID, PlaylistID: playlistID}).Error
+		if err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.RollBack()
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
