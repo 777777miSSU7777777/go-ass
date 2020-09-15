@@ -499,6 +499,41 @@ func (repo *Repository) DeleteUser(userID int64) error {
 	return nil
 }
 
+func (repo *Repository) AddRefreshToken(userID int64, refreshToken string) error {
+	userTokens := model.UserTokens{UserID: userID, Token: refreshToken}
+	err := repo.db.Create(&userTokens).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) UpdateRefreshToken(userID int64, refreshToken string, newRefreshToken string) error {
+	var userTokens model.UserTokens
+	newUserTokens := model.UserTokens{UserID: userID, Token: newRefreshToken}
+	err := repo.db.Where(&model.UserTokens{UserID: userID, Token: refreshToken}).Find(&userTokens).Error
+	if err != nil {
+		return err
+	}
+
+	err = repo.db.Model(&userTokens).Updates(newUserTokens).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) DeleteRefreshToken(userID int64, refreshToken string) error {
+	err := repo.db.Delete(&model.UserTokens{UserID: userID, Token: refreshToken}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (repo *Repository) AddTracksToUserList(userID int64, tracksID ...int64) error {
 	tx := repo.db.Begin()
 
