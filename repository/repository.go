@@ -3,14 +3,11 @@ package repository
 import (
 	"fmt"
 
+	"github.com/777777miSSU7777777/go-ass/helper"
 	"github.com/777777miSSU7777777/go-ass/model"
 
 	"github.com/jinzhu/gorm"
 )
-
-type UploadTrackCallback func(id int64) error
-
-type DeleteTrackCallback func(id int64) error
 
 type Repository struct {
 	db *gorm.DB
@@ -328,7 +325,7 @@ func (repo *Repository) GetTrack(trackID int64) (model.Track, error) {
 	return track, nil
 }
 
-func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack UploadTrackCallback) (model.Track, error) {
+func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.UploadTrackCallback) (model.Track, error) {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -388,7 +385,7 @@ func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, erro
 	return track, nil
 }
 
-func (repo *Repository) DeleteTrack(trackID int64) error {
+func (repo *Repository) DeleteTrack(trackID int64, deleteTrack helper.DeleteTrackCallback) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -398,25 +395,37 @@ func (repo *Repository) DeleteTrack(trackID int64) error {
 		}
 	}()
 
-	err := repo.db.Delete(&model.Track{TrackID: trackID}).Error
+	err := tx.Delete(&model.Track{TrackID: trackID}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = repo.db.Delete(&model.GenreTracks{TrackID: trackID}).Error
+	err = tx.Delete(&model.GenreTracks{TrackID: trackID}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = repo.db.Delete(&model.UserTracks{TrackID: trackID}).Error
+	err = tx.Delete(&model.UserTracks{TrackID: trackID}).Error
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = repo.db.Delete(&model.PlaylistTracks{TrackID: trackID}).Error
+	err = tx.Delete(&model.PlaylistTracks{TrackID: trackID}).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = deleteTrack(trackID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
 		return err

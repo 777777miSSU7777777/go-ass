@@ -2,14 +2,10 @@ package service
 
 import (
 	"fmt"
-	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
-	"golang.org/x/crypto/bcrypt"
-
+	"github.com/777777miSSU7777777/go-ass/helper"
 	"github.com/777777miSSU7777777/go-ass/model"
 	"github.com/777777miSSU7777777/go-ass/repository"
-	"github.com/777777miSSU7777777/go-ass/helper"
 )
 
 var UserCredentialsAreInvalidError = fmt.Errorf("user credentials are invalid error")
@@ -22,9 +18,9 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (service Service) AddTrack(title string, artistID int64, genreID int64, uploadedByID int64) (model.Track, error) {
-	newTrack := model.Track{ TrackTitle: title, ArtistID: artistID, GenreID: genreID, UploadedByID: uploadedByID }
-	track, err := service.AddNewTrack(newTrack)
+func (service Service) AddTrack(title string, artistID int64, genreID int64, uploadedByID int64, uploadTrack helper.UploadTrackCallback) (model.Track, error) {
+	newTrack := model.Track{TrackTitle: title, ArtistID: artistID, GenreID: genreID, UploadedByID: uploadedByID}
+	track, err := service.repo.AddNewTrack(newTrack, uploadTrack)
 	if err != nil {
 		return model.Track{}, err
 	}
@@ -51,7 +47,7 @@ func (service Service) GetTrackByID(trackID int64) (model.Track, error) {
 }
 
 func (service Service) UpdateTrackByID(trackID int64, title string, artistID int64, genreID int64) (model.Track, error) {
-	updatedTrack := model.Track{ TrackID: trackID, TrackTitle: title, ArtistID: artistID, GenreID: genreID }
+	updatedTrack := model.Track{TrackID: trackID, TrackTitle: title, ArtistID: artistID, GenreID: genreID}
 	track, err := service.repo.UpdateTrack(updatedTrack)
 	if err != nil {
 		return model.Track{}, err
@@ -60,8 +56,8 @@ func (service Service) UpdateTrackByID(trackID int64, title string, artistID int
 	return track, nil
 }
 
-func (service Service) DeleteTrackByID(trackID int64) error {
-	err := service.repo.DeleteTrack(trackID)
+func (service Service) DeleteTrackByID(trackID int64, deleteTrack helper.DeleteTrackCallback) error {
+	err := service.repo.DeleteTrack(trackID, deleteTrack)
 	if err != nil {
 		return err
 	}
@@ -70,8 +66,12 @@ func (service Service) DeleteTrackByID(trackID int64) error {
 }
 
 func (service Service) SignUp(email string, username string, password string) error {
-	hashedPassword := helper.HashPassword(password)
-	newUser := model.User{ Email: email, Username: username,  Password: hashedPassword, Role: helper.UserRole }
+	hashedPassword, err := helper.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	newUser := model.User{Email: email, Username: username, Password: hashedPassword, Role: helper.UserRole}
 	_, err = service.repo.AddNewUser(newUser)
 	if err != nil {
 		return err
@@ -101,6 +101,7 @@ func (service Service) AddTrackToUserTrackList(userID int64, trackID int64) ([]m
 }
 
 func (service Service) RemoveTrackFromUserTrackList(userID int64, trackID int64) ([]model.Track, error) {
+	return nil, nil
 }
 
 func (service Service) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {
@@ -108,7 +109,7 @@ func (service Service) GetAllPlaylists() ([]model.Playlist, [][]model.Track, err
 }
 
 func (service Service) GetUserPlaylists(userID int64) ([]model.Playlist, [][]model.Track, error) {
-	return nil
+	return nil, nil, nil
 }
 
 func (service Service) CreateNewPlaylist(title string, createdByID int64, trackList []int64) (model.Playlist, []model.Track, error) {
