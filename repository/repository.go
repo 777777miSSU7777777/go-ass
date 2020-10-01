@@ -454,6 +454,16 @@ func (repo *Repository) GetUser(userID int64) (model.User, error) {
 	return user, nil
 }
 
+func (repo *Repository) GetUserByEmail(email string) (model.User, error) {
+	var user model.User
+	err := repo.db.Where(&model.User{Email: email}).First(&user).Error
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
+}
+
 func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 	tx := repo.db.Begin()
 

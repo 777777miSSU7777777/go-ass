@@ -81,14 +81,59 @@ func (service Service) SignUp(email string, username string, password string) er
 }
 
 func (service Service) SignIn(email string, password string) (string, string, error) {
+	user, err := service.repo.GetUserByEmail(email)
+	if err != nil {
+		return "", "", err
+	}
+
+	if helper.CheckPasswordHash(password, user.Password) {
+		accessToken, refreshToken, err := helper.GenerateTokens(user.UserID)
+		if err != nil {
+			return "", "", err
+		}
+
+		return accessToken, refreshToken, nil
+	}
+
 	return "", "", nil
 }
 
 func (service Service) RefreshToken(token string) (string, string, error) {
-	return "", "", nil
+	tokenClaims, err := helper.ParseToken(token)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	userID := tokenClaims["userID"].(int64)
+
+	accessToken, refreshToken, err := helper.GenerateTokens(userID)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = service.repo.UpdateRefreshToken(userID, token, refreshToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (service Service) SignOut(token string) error {
+	tokenClaims, err := helper.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	userID := tokenClaims["userID"].(int64)
+
+	err = service.repo.DeleteRefreshToken(userID, token)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
