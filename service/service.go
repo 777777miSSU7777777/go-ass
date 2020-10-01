@@ -167,16 +167,53 @@ func (service Service) SignOut(token string) error {
 	return nil
 }
 
-func (service Service) GetUserTrackList(userID int64) ([]model.Track, error) {
-	return nil, nil
+func (service Service) GetUserTrackList(userID int64) ([]model.TrackResponse, error) {
+	userTracks, err := service.repo.GetUserTrackList(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	dbTracks := make([]model.Track, 0, len(userTracks))
+	for _, userTrack := range userTracks {
+		dbTrack, err := service.repo.GetTrack(userTrack.TrackID)
+		if err != nil {
+			return nil, err
+		}
+
+		dbTracks = append(dbTracks, dbTrack)
+	}
+
+	responseTracks := make([]model.TrackResponse, 0, len(dbTracks))
+
+	for _, dbTrack := range dbTracks {
+		trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+		if err != nil {
+			return nil, err
+		}
+
+		trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+		responseTracks = append(responseTracks, trackResponse)
+	}
+
+	return responseTracks, nil
 }
 
-func (service Service) AddTrackToUserTrackList(userID int64, trackID int64) ([]model.Track, error) {
-	return nil, nil
+func (service Service) AddTrackToUserTrackList(userID int64, tracksID ...int64) error {
+	err := service.repo.AddTracksToUserList(userID, tracksID...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (service Service) RemoveTrackFromUserTrackList(userID int64, trackID int64) ([]model.Track, error) {
-	return nil, nil
+func (service Service) DeleteTracksFromUserTrackList(userID int64, tracksID ...int64) error {
+	err := service.repo.DeleteTracksFromUserList(userID, tracksID...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (service Service) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {

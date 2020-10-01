@@ -553,6 +553,17 @@ func (repo *Repository) DeleteRefreshToken(userID int64, refreshToken string) er
 	return nil
 }
 
+func (repo *Repository) GetUserTrackList(userID int64) ([]model.UserTracks, error) {
+	var userTracks []model.UserTracks
+
+	err := repo.db.Where(&model.UserTracks{UserID: userID}).Find(&userTracks).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return userTracks, nil
+}
+
 func (repo *Repository) AddTracksToUserList(userID int64, tracksID ...int64) error {
 	tx := repo.db.Begin()
 
