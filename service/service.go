@@ -18,42 +18,72 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (service Service) AddTrack(title string, artistID int64, genreID int64, uploadedByID int64, uploadTrack helper.UploadTrackCallback) (model.Track, error) {
+func (service Service) AddTrack(title string, artistID int64, genreID int64, uploadedByID int64, uploadTrack helper.UploadTrackCallback) (model.TrackResponse, error) {
 	newTrack := model.Track{TrackTitle: title, ArtistID: artistID, GenreID: genreID, UploadedByID: uploadedByID}
-	track, err := service.repo.AddNewTrack(newTrack, uploadTrack)
+	dbTrack, err := service.repo.AddNewTrack(newTrack, uploadTrack)
 	if err != nil {
-		return model.Track{}, err
+		return model.TrackResponse{}, err
 	}
 
-	return track, nil
+	trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+	if err != nil {
+		return model.TrackResponse{}, err
+	}
+
+	trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+	return trackResponse, nil
 }
 
-func (service Service) GetAllTracks() ([]model.Track, error) {
-	tracks, err := service.repo.GetAllTracks()
+func (service Service) GetAllTracks() ([]model.TrackResponse, error) {
+	dbTracks, err := service.repo.GetAllTracks()
 	if err != nil {
 		return nil, err
 	}
 
-	return tracks, nil
-}
+	var responseTracks []model.TrackResponse = make([]model.TrackResponse, 0, len(dbTracks))
 
-func (service Service) GetTrackByID(trackID int64) (model.Track, error) {
-	track, err := service.repo.GetTrack(trackID)
-	if err != nil {
-		return model.Track{}, err
+	for _, dbTrack := range dbTracks {
+		trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+		if err != nil {
+			return nil, err
+		}
+
+		trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+		responseTracks = append(responseTracks, trackResponse)
 	}
 
-	return track, nil
+	return responseTracks, nil
 }
 
-func (service Service) UpdateTrackByID(trackID int64, title string, artistID int64, genreID int64) (model.Track, error) {
+func (service Service) GetTrackByID(trackID int64) (model.TrackResponse, error) {
+	dbTrack, err := service.repo.GetTrack(trackID)
+	if err != nil {
+		return model.TrackResponse{}, err
+	}
+
+	trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+	if err != nil {
+		return model.TrackResponse{}, err
+	}
+
+	trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+	return trackResponse, nil
+}
+
+func (service Service) UpdateTrackByID(trackID int64, title string, artistID int64, genreID int64) (model.TrackResponse, error) {
 	updatedTrack := model.Track{TrackID: trackID, TrackTitle: title, ArtistID: artistID, GenreID: genreID}
-	track, err := service.repo.UpdateTrack(updatedTrack)
+	dbTrack, err := service.repo.UpdateTrack(updatedTrack)
 	if err != nil {
-		return model.Track{}, err
+		return model.TrackResponse{}, err
 	}
 
-	return track, nil
+	trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+	if err != nil {
+		return model.TrackResponse{}, err
+	}
+
+	trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+	return trackResponse, nil
 }
 
 func (service Service) DeleteTrackByID(trackID int64, deleteTrack helper.DeleteTrackCallback) error {
