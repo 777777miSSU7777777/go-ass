@@ -216,12 +216,87 @@ func (service Service) DeleteTracksFromUserTrackList(userID int64, tracksID ...i
 	return nil
 }
 
-func (service Service) GetAllPlaylists() ([]model.Playlist, [][]model.Track, error) {
-	return nil, nil, nil
+func (service Service) GetAllPlaylists() ([]model.PlaylistResponse, error) {
+	dbPlaylists, err := service.repo.GetAllPlaylists()
+	if err != nil {
+		return nil, err
+	}
+
+	responsePlaylists := make([]model.PlaylistResponse, 0, len(dbPlaylists))
+	for _, dbPlaylist := range dbPlaylists {
+		dbPlaylistTracks, err := service.repo.GetPlaylistTracks(dbPlaylist.PlaylistID)
+		if err != nil {
+			return nil, err
+		}
+
+		playlistTracksResponse := make([]model.TrackResponse, 0, len(dbPlaylistTracks))
+		for _, dbPlaylistTrack := range dbPlaylistTracks {
+			dbTrack, err := service.repo.GetTrack(dbPlaylistTrack.TrackID)
+			if err != nil {
+				return nil, err
+			}
+
+			trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+			if err != nil {
+				return nil, err
+			}
+
+			trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+			playlistTracksResponse = append(playlistTracksResponse, trackResponse)
+		}
+
+		playlistResponse := model.PlaylistResponse{ID: dbPlaylist.PlaylistID, Title: dbPlaylist.PlaylistTitle, TrackList: playlistTracksResponse}
+		responsePlaylists = append(responsePlaylists, playlistResponse)
+	}
+
+	return responsePlaylists, nil
 }
 
-func (service Service) GetUserPlaylists(userID int64) ([]model.Playlist, [][]model.Track, error) {
-	return nil, nil, nil
+func (service Service) GetUserPlaylists(userID int64) ([]model.PlaylistResponse, error) {
+	dbUserPlaylists, err := service.repo.GetUserPlaylists(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	dbPlaylists := make([]model.Playlist, 0, len(dbUserPlaylists))
+
+	for _, dbUserPlaylist := range dbUserPlaylists {
+		dbPlaylist, err := service.repo.GetPlaylist(dbUserPlaylist.PlaylistID)
+		if err != nil {
+			return nil, err
+		}
+
+		dbPlaylists = append(dbPlaylists, dbPlaylist)
+	}
+
+	responsePlaylists := make([]model.PlaylistResponse, 0, len(dbPlaylists))
+	for _, dbPlaylist := range dbPlaylists {
+		dbPlaylistTracks, err := service.repo.GetPlaylistTracks(dbPlaylist.PlaylistID)
+		if err != nil {
+			return nil, err
+		}
+
+		playlistTracksResponse := make([]model.TrackResponse, 0, len(dbPlaylistTracks))
+		for _, dbPlaylistTrack := range dbPlaylistTracks {
+			dbTrack, err := service.repo.GetTrack(dbPlaylistTrack.TrackID)
+			if err != nil {
+				return nil, err
+			}
+
+			trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+			if err != nil {
+				return nil, err
+			}
+
+			trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+			playlistTracksResponse = append(playlistTracksResponse, trackResponse)
+		}
+
+		playlistResponse := model.PlaylistResponse{ID: dbPlaylist.PlaylistID, Title: dbPlaylist.PlaylistTitle, TrackList: playlistTracksResponse}
+		responsePlaylists = append(responsePlaylists, playlistResponse)
+	}
+
+	return responsePlaylists, nil
 }
 
 func (service Service) CreateNewPlaylist(title string, createdByID int64, trackList []int64) (model.Playlist, []model.Track, error) {

@@ -175,7 +175,7 @@ func (repo *Repository) UpdateGenre(updatedGenre model.Genre) (model.Genre, erro
 	return genre, nil
 }
 
-func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) ([]model.Playlist, error) {
+func (repo *Repository) GetAllPlaylists() ([]model.Playlist, error) {
 	var playlists []model.Playlist
 	err := repo.db.Find(&playlists).Error
 	if err != nil {
@@ -183,6 +183,16 @@ func (repo *Repository) GetAllPlaylists(updatedPlaylist model.Playlist) ([]model
 	}
 
 	return playlists, nil
+}
+
+func (repo *Repository) GetUserPlaylists(userID int64) ([]model.UserPlaylists, error) {
+	var userPlaylists []model.UserPlaylists
+	err := repo.db.Where(model.UserPlaylists{UserID: userID}).Find(&userPlaylists).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return userPlaylists, nil
 }
 
 func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
@@ -193,6 +203,16 @@ func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
 	}
 
 	return playlist, nil
+}
+
+func (repo *Repository) GetPlaylistTracks(playlistID int64) ([]model.PlaylistTracks, error) {
+	var playlistTracks []model.PlaylistTracks
+	err := repo.db.Where(&model.PlaylistTracks{PlaylistID: playlistID}).Find(&playlistTracks).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return playlistTracks, nil
 }
 
 func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playlist, error) {
