@@ -9,6 +9,7 @@ import (
 )
 
 var UserCredentialsAreInvalidError = fmt.Errorf("user credentials are invalid error")
+var InvalidUserError = fmt.Errorf("user id is invalid error")
 
 type Service struct {
 	repo repository.Repository
@@ -299,22 +300,126 @@ func (service Service) GetUserPlaylists(userID int64) ([]model.PlaylistResponse,
 	return responsePlaylists, nil
 }
 
-func (service Service) CreateNewPlaylist(title string, createdByID int64, trackList []int64) (model.Playlist, []model.Track, error) {
-	return model.Playlist{}, nil, nil
+func (service Service) CreateNewPlaylist(title string, createdByID int64, trackList []int64) (model.PlaylistResponse, error) {
+	newPlaylist := model.Playlist{PlaylistTitle: title, CreatedByID: createdByID}
+	dbPlaylist, err := service.repo.AddNewPlaylist(newPlaylist)
+	if err != nil {
+		return model.PlaylistResponse{}, err
+	}
+
+	err = service.repo.AddTracksToPlaylist(dbPlaylist.PlaylistID, trackList...)
+	if err != nil {
+		return model.PlaylistResponse{}, err
+	}
+
+	dbPlaylistTracks, err := service.repo.GetPlaylistTracks(dbPlaylist.PlaylistID)
+	if err != nil {
+		return model.PlaylistResponse{}, err
+	}
+
+	playlistTracksResponse := make([]model.TrackResponse, 0, len(dbPlaylistTracks))
+	for _, dbPlaylistTrack := range dbPlaylistTracks {
+		dbTrack, err := service.repo.GetTrack(dbPlaylistTrack.TrackID)
+		if err != nil {
+			return model.PlaylistResponse{}, err
+		}
+
+		trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+		if err != nil {
+			return model.PlaylistResponse{}, err
+		}
+
+		trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+		playlistTracksResponse = append(playlistTracksResponse, trackResponse)
+	}
+
+	playlistResponse := model.PlaylistResponse{ID: dbPlaylist.PlaylistID, Title: dbPlaylist.PlaylistTitle, TrackList: playlistTracksResponse}
+
+	return playlistResponse, nil
 }
 
-func (service Service) GetPlaylistByID(playlistID int64) (model.Playlist, []model.Track, error) {
-	return model.Playlist{}, nil, nil
+func (service Service) GetPlaylistByID(playlistID int64) (model.PlaylistResponse, error) {
+	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
+	if err != nil {
+		return model.PlaylistResponse{}, err
+	}
+
+	dbPlaylistTracks, err := service.repo.GetPlaylistTracks(playlistID)
+	if err != nil {
+		return model.PlaylistResponse{}, err
+	}
+
+	playlistTracksResponse := make([]model.TrackResponse, 0, len(dbPlaylistTracks))
+	for _, dbPlaylistTrack := range dbPlaylistTracks {
+		dbTrack, err := service.repo.GetTrack(dbPlaylistTrack.TrackID)
+		if err != nil {
+			return model.PlaylistResponse{}, err
+		}
+
+		trackArtist, err := service.repo.GetArtist(dbTrack.ArtistID)
+		if err != nil {
+			return model.PlaylistResponse{}, err
+		}
+
+		trackResponse := model.TrackResponse{ID: dbTrack.TrackID, Title: dbTrack.TrackTitle, Artist: trackArtist.ArtistName}
+		playlistTracksResponse = append(playlistTracksResponse, trackResponse)
+	}
+
+	playlistResponse := model.PlaylistResponse{ID: dbPlaylist.PlaylistID, Title: dbPlaylist.PlaylistTitle, TrackList: playlistTracksResponse}
+
+	return playlistResponse, nil
 }
 
-func (service Service) DeletePlaylistByID(playlistID int64, createdByID int64) error {
+func (service Service) DeletePlaylistByID(playlistID int64, userID int64) error {
+	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
+	if err != nil {
+		return err
+	}
+
+	if dbPlaylist.CreatedByID != userID {
+		return InvalidUserError
+	}
+
+	err = service.repo.DeletePlaylist(playlistID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (service Service) AddTracksToPlaylist(userID int64, playlistID int64, trackList []string) (model.Playlist, []model.Track, error) {
-	return model.Playlist{}, nil, nil
+func (service Service) AddTracksToPlaylist(userID int64, playlistID int64, trackList []int64) error {
+	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
+	if err != nil {
+		return err
+	}
+
+	if dbPlaylist.CreatedByID != userID {
+		return InvalidUserError
+	}
+
+	err = service.repo.AddTracksToPlaylist(playlistID, trackList...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (service Service) RemoveTracksFromPlaylist(userID int64, playlistID int64, trackList []string) (model.Playlist, []model.Track, error) {
-	return model.Playlist{}, nil, nil
+func (service Service) DeleteTracksFromPlaylist(userID int64, playlistID int64, trackList []int64) error {
+	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
+	if err != nil {
+		return err
+	}
+
+	if dbPlaylist.CreatedByID != userID {
+		return InvalidUserError
+	}
+
+	err = service.repo.DeleteTracksFromPlaylist(playlistID, trackList...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

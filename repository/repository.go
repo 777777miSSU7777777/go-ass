@@ -235,6 +235,13 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 
 	resultValue := result.Value.(model.Playlist)
 
+	userPlaylists := model.UserPlaylists{UserID: resultValue.CreatedByID, PlaylistID: resultValue.PlaylistID}
+	err = tx.Create(&userPlaylists).Error
+	if err != nil {
+		tx.Rollback()
+		return model.Playlist{}, err
+	}
+
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
@@ -364,6 +371,15 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 	}
 
 	resultValue := result.Value.(model.Track)
+
+	if resultValue.UploadedByID != 0 {
+		userTracks := model.UserTracks{UserID: resultValue.UploadedByID, TrackID: resultValue.TrackID}
+		err := tx.Create(&userTracks).Error
+		if err != nil {
+			tx.Rollback()
+			return model.Track{}, err
+		}
+	}
 
 	if resultValue.GenreID != 0 {
 		genreTracks := model.GenreTracks{GenreID: resultValue.GenreID, TrackID: resultValue.TrackID}
