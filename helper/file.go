@@ -8,7 +8,7 @@ import (
 
 type UploadTrackCallback func(id int64) error
 
-type DeleteTrackCallback func(id int64) error
+type DeleteTrackCallback func() error
 
 var MasterManifestTemplate = "#EXTM3U\n" +
 	"#EXT-X-STREAM-INF:BANDWITH=64000\n" +
@@ -41,7 +41,7 @@ func SaveMP3File(dirPath string, filename string, fileBytes []byte) error {
 	return nil
 }
 
-func TranscodeToHLS(dirPath string, inputFilePath string, masterManifestName string) error {
+func TranscodeToHLS(dirPath string, inputFilePath string) error {
 	err := os.MkdirAll(dirPath, 0755)
 	if err != nil {
 		return err

@@ -1,472 +1,616 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-
-	"github.com/gorilla/mux"
+	"strconv"
 
 	"github.com/777777miSSU7777777/go-ass/model"
-	"github.com/777777miSSU7777777/go-ass/repository"
+
 	"github.com/777777miSSU7777777/go-ass/service"
+	"github.com/gofiber/fiber"
 )
 
-type ErrorResponse struct {
-	Type  string `json:"type"`
-	Error string `json:"error"`
-}
-
-var BodyParseError = "BODY PARSE ERROR"
-var IDParseError = "ID PARSE ERROR"
-var ValidationError = "VALIDATION ERROR"
-var NotFoundError = "NOT FOUND ERROR"
-var ServiceError = "SERVICE ERROR"
-var QueryStringError = "QUERY STRING ERROR"
-var InternalServerError = "INTERNAL SERVER ERROR"
-
-func writeError(w http.ResponseWriter, statusCode int, errType string, err error) {
-	w.WriteHeader(statusCode)
-	_ = json.NewEncoder(w).Encode(ErrorResponse{Type: errType, Error: err.Error()})
-}
-
 type API struct {
-	svc service.Service
-	m   FileManager
+	svc            service.Service
+	storageManager StorageManager
 }
 
-func NewApi(svc service.Service, m FileManager) API {
-	return API{svc, m}
+func NewApi(svc service.Service, storageManager StorageManager) API {
+	return API{svc, storageManager}
 }
 
-func (a API) AddTrack(w http.ResponseWriter, r *http.Request) {
-	author, title := r.FormValue("author"), r.FormValue("title")
-
-	userID := r.Context().Value("userID").(string)
-
-	newTrack, err := a.svc.AddTrack(author, title, userID)
+func (api API) AddNewTrack(ctx *fiber.Ctx) error {
+	artistID, err := strconv.ParseInt(ctx.FormValue("artistID"), 10, 64)
 	if err != nil {
-		if err.Error() == model.TrackAuthorEmpty.Error() || err.Error() == model.TrackTitleEmpty.Error() {
-			writeError(w, 400, ValidationError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		_ = a.m.Delete(w, newTrack.ID.Hex())
-		return
-	} else {
-		err = a.m.Upload(w, r, newTrack.ID.Hex())
-		if err != nil {
-			_ = a.svc.DeleteTrackByID(newTrack.ID.Hex())
-			_ = a.m.Delete(w, newTrack.ID.Hex())
-			return
-		}
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(AddTrackResponse{newTrack.ID.Hex(), newTrack.Author, newTrack.Title})
+	title := ctx.FormValue("title")
+
+	genreID, err := strconv.ParseInt(ctx.FormValue("genreID"), 10, 64)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	userID := ctx.Context().Value("userID").(int64)
+
+	fileHeader, err := ctx.FormFile("audiofile")
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	defer file.Close()
+
+	uploadTrack := api.storageManager.UploadTrack(&file)
+
+	newTrack, err := api.svc.AddNewTrack(title, artistID, genreID, userID, uploadTrack)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": newTrack,
+	})
+	return nil
 }
 
-func (a API) GetAllTracks(w http.ResponseWriter, r *http.Request) {
-	key := r.URL.Query().Get("key")
-	var tracks []model.Track
-	var err error
-	if key != "" {
-		tracks, err = a.svc.GetTracksByKey(key)
-		if err != nil {
-			if err.Error() == repository.TrackNotFoundError.Error() {
-				writeError(w, 400, NotFoundError, err)
-			} else {
-				writeError(w, 400, ServiceError, err)
-			}
-			return
-		}
-
-	} else {
-		tracks, err = a.svc.GetAllTracks()
-		if err != nil {
-			if err.Error() == repository.TrackNotFoundError.Error() {
-				writeError(w, 404, NotFoundError, err)
-			} else {
-				writeError(w, 400, ServiceError, err)
-			}
-			return
-		}
+func (api API) GetAllTracks(ctx *fiber.Ctx) error {
+	allTracks, err := api.svc.GetAllTracks()
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := GetAllTracksResponse{}
-	for _, track := range tracks {
-		resp = append(resp, TrackResponse{ID: track.ID.Hex(), Author: track.Author, Title: track.Title})
-	}
-
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": allTracks,
+	})
+	return nil
 }
 
-func (a API) GetTrackByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	trackID := vars["id"]
-
-	track, err := a.svc.GetTrackByID(trackID)
+func (api API) GetTrackByID(ctx *fiber.Ctx) error {
+	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
 	if err != nil {
-		if err.Error() == repository.TrackNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(GetTrackByIDResponse{track.ID.Hex(), track.Author, track.Title})
+	track, err := api.svc.GetTrackByID(trackID)
+	if err != nil {
+		ctx.Status(404).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   false,
+		"data": track,
+	})
+	return nil
 }
 
-func (a API) UpdateTrackByID(w http.ResponseWriter, r *http.Request) {
-	var req UpdateTrackByIDRequest
-	vars := mux.Vars(r)
-	trackID := vars["id"]
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) UpdateTrackByID(ctx *fiber.Ctx) error {
+	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	updatedTrack, err := a.svc.UpdateTrackByID(trackID, req.Author, req.Title)
+	var req model.UpdateTrackByIDRequest
+	err = ctx.BodyParser(&req)
 	if err != nil {
-		if err.Error() == repository.TrackNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(UpdateTrackByIDResponse{updatedTrack.ID.Hex(), updatedTrack.Author, updatedTrack.Title})
+	updatedTrack, err := api.svc.UpdateTrackByID(trackID, req.TrackTitle, req.ArtistID, req.GenreID)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": updatedTrack,
+	})
+	return nil
 }
 
-func (a API) DeleteTrackByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	trackID := vars["id"]
-
-	err := a.m.Delete(w, trackID)
+func (api API) DeleteTrackByID(ctx *fiber.Ctx) error {
+	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
 	if err != nil {
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	err = a.svc.DeleteTrackByID(trackID)
+	deleteTrack := api.storageManager.DeleteTrack(trackID)
+
+	err = api.svc.DeleteTrackByID(trackID, deleteTrack)
 	if err != nil {
-		if err.Error() == repository.TrackNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(DeleteTrackByIDResponse{})
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) SignUp(w http.ResponseWriter, r *http.Request) {
-	var req SignUpRequest
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) SignUp(ctx *fiber.Ctx) error {
+	var req model.SignUpRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	err = a.svc.SignUp(req.Email, req.Name, req.Password)
+	err = api.svc.SignUp(req.Email, req.Username, req.Password)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(SignUpResponse{})
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) SignIn(w http.ResponseWriter, r *http.Request) {
-	var req SignInRequest
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) SignIn(ctx *fiber.Ctx) error {
+	var req model.SignInRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	accessToken, refreshToken, err := a.svc.SignIn(req.Email, req.Password)
+	accessToken, refreshToken, err := api.svc.SignIn(req.Email, req.Password)
 	if err != nil {
-		if err.Error() == repository.UserNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+	res := model.SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken}
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": res,
+	})
+	return nil
 }
 
-func (a API) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	var req RefreshTokenRequest
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) RefreshToken(ctx *fiber.Ctx) error {
+	var req model.RefreshTokenRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	accessToken, refreshToken, err := a.svc.RefreshToken(req.RefreshToken)
+	accessToken, refreshToken, err := api.svc.RefreshToken(req.RefreshToken)
 	if err != nil {
-		if err.Error() == repository.RefreshTokenNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(SignInResponse{AccessToken: accessToken, RefreshToken: refreshToken})
+	res := model.RefreshTokenResponse{AccessToken: accessToken, RefreshToken: refreshToken}
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   false,
+		"data": res,
+	})
+	return nil
 }
 
-func (a API) SignOut(w http.ResponseWriter, r *http.Request) {
-	var req SignOutRequest
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) SignOut(ctx *fiber.Ctx) error {
+	var req model.SignOutRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	err = a.svc.SignOut(req.RefreshToken)
+	err = api.svc.SignOut(req.RefreshToken)
 	if err != nil {
-		if err.Error() == repository.RefreshTokenNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(SignOutResponse{})
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) GetUserTrackList(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(string)
+func (api API) GetUserTrackList(ctx *fiber.Ctx) error {
+	userID := ctx.Context().Value("userID").(int64)
 
-	userTrackList, err := a.svc.GetUserTrackList(userID)
+	userTrackList, err := api.svc.GetUserTrackList(userID)
 	if err != nil {
-		if err.Error() == repository.UserNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-		} else {
-			writeError(w, 400, ServiceError, err)
-		}
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
 	}
 
-	resp := GetUserTrackListResponse{}
-	for _, track := range userTrackList {
-		resp = append(resp, TrackResponse{ID: track.ID.Hex(), Author: track.Author, Title: track.Title})
-	}
-
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   false,
+		"data": userTrackList,
+	})
+	return nil
 }
 
-func (a API) AddTrackToUserTrackList(w http.ResponseWriter, r *http.Request) {
-	var req AddTrackToUserTrackListRequest
+func (api API) AddTracksToUserTrackList(ctx *fiber.Ctx) error {
+	userID := ctx.Context().Value("userID").(int64)
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	var req model.AddTracksToUserListRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	userID := r.Context().Value("userID").(string)
-
-	resp, err := a.svc.AddTrackToUserTrackList(userID, req.TrackID)
+	err = api.svc.AddTracksToUserTrackList(userID, req.TrackList...)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) RemoveTrackFromUserTrackList(w http.ResponseWriter, r *http.Request) {
-	var req RemoveTrackFromUserTrackListRequest
+func (api API) DeleteTracksFromUserList(ctx *fiber.Ctx) error {
+	userID := ctx.Context().Value("userID").(int64)
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	var req model.DeleteTracksFromUserListRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	userID := r.Context().Value("userID").(string)
-
-	resp, err := a.svc.RemoveTrackFromUserTrackList(userID, req.TrackID)
+	err = api.svc.DeleteTracksFromUserTrackList(userID, req.TrackList...)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) GetAllPlaylists(w http.ResponseWriter, r *http.Request) {
-	playlists, playlistsTracks, err := a.svc.GetAllPlaylists()
+func (api API) GetAllPlaylists(ctx *fiber.Ctx) error {
+	allPlaylists, err := api.svc.GetAllPlaylists()
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := GetAllPlaylistsResponse{}
-	for playlistIndex, playlist := range playlists {
-		trackList := []TrackResponse{}
-		for _, playlistTrack := range playlistsTracks[playlistIndex] {
-			trackList = append(trackList, TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title})
-		}
-		resp = append(resp, PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title, TrackList: trackList})
-	}
-
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": allPlaylists,
+	})
+	return nil
 }
 
-func (a API) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(string)
+func (api API) GetUserPlaylists(ctx *fiber.Ctx) error {
+	userID := ctx.Context().Value("userID").(int64)
 
-	playlists, playlistsTracks, err := a.svc.GetUserPlaylists(userID)
+	userPlaylists, err := api.svc.GetUserPlaylists(userID)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := GetUserPlaylistsResponse{}
-	for playlistIndex, playlist := range playlists {
-		trackList := []TrackResponse{}
-		for _, playlistTrack := range playlistsTracks[playlistIndex] {
-			trackList = append(trackList, TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title})
-		}
-		resp = append(resp, PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title, TrackList: trackList})
-	}
-
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": userPlaylists,
+	})
+	return nil
 }
 
-func (a API) CreateNewPlaylist(w http.ResponseWriter, r *http.Request) {
-	var req CreateNewPlaylistRequest
+func (api API) CreateNewPlaylist(ctx *fiber.Ctx) error {
+	userID := ctx.Context().Value("userID").(int64)
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	var req model.CreateNewPlaylistRequest
+	err := ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	userID := r.Context().Value("userID").(string)
-
-	playlist, playlistTracks, err := a.svc.CreateNewPlaylist(req.Title, userID, req.TrackList)
+	newPlaylist, err := api.svc.CreateNewPlaylist(req.PlaylistTitle, userID, req.TrackList)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := PlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
-	for _, playlistTrack := range playlistTracks {
-		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
-		resp.TrackList = append(resp.TrackList, track)
-	}
-
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": newPlaylist,
+	})
+	return nil
 }
 
-func (a API) GetPlaylistByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playlistID := vars["id"]
-
-	playlist, playlistTracks, err := a.svc.GetPlaylistByID(playlistID)
+func (api API) GetPlaylistByID(ctx *fiber.Ctx) error {
+	playlistID, err := strconv.ParseInt(ctx.Params("playlistId"), 10, 64)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := GetPlaylistByIDResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
-	for _, playlistTrack := range playlistTracks {
-		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
-		resp.TrackList = append(resp.TrackList, track)
+	playlist, err := api.svc.GetPlaylistByID(playlistID)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok":   true,
+		"data": playlist,
+	})
+	return nil
 }
 
-func (a API) DeletePlaylistByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playlistID := vars["id"]
-
-	userID := r.Context().Value("userID").(string)
-
-	err := a.svc.DeletePlaylistByID(playlistID, userID)
+func (api API) DeletePlaylistByID(ctx *fiber.Ctx) error {
+	playlistID, err := strconv.ParseInt(ctx.Params("playlistId"), 10, 64)
 	if err != nil {
-		if err.Error() == repository.PlaylistNotFoundError.Error() {
-			writeError(w, 404, NotFoundError, err)
-			return
-		} else {
-			writeError(w, 400, ServiceError, err)
-			return
-		}
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(DeletePlaylistByIDResponse{})
+	userID := ctx.Context().Value("userID").(int64)
+
+	err = api.svc.DeletePlaylistByID(playlistID, userID)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) AddTracksToPlaylist(w http.ResponseWriter, r *http.Request) {
-	var req AddTracksToPlaylistRequest
-
-	vars := mux.Vars(r)
-	playlistID := vars["id"]
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) AddTracksToPlaylist(ctx *fiber.Ctx) error {
+	playlistID, err := strconv.ParseInt(ctx.Params("playlistID"), 10, 64)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	userID := r.Context().Value("userID").(string)
-
-	playlist, playlistTracks, err := a.svc.AddTracksToPlaylist(userID, playlistID, req.TrackList)
+	var req model.AddTracksToPlaylistRequest
+	err = ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := AddTracksToPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
-	for _, playlistTrack := range playlistTracks {
-		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
-		resp.TrackList = append(resp.TrackList, track)
+	userID := ctx.Context().Value("userID").(int64)
+
+	err = api.svc.AddTracksToPlaylist(userID, playlistID, req.TrackList)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }
 
-func (a API) RemoveTracksFromPlaylist(w http.ResponseWriter, r *http.Request) {
-	var req RemoveTracksFromPlaylistRequest
-
-	vars := mux.Vars(r)
-	playlistID := vars["id"]
-
-	err := json.NewDecoder(r.Body).Decode(&req)
+func (api API) DeleteTracksFromPlaylist(ctx *fiber.Ctx) error {
+	playlistID, err := strconv.ParseInt(ctx.Params("playlistID"), 10, 64)
 	if err != nil {
-		writeError(w, 400, BodyParseError, fmt.Errorf("error while parsing body: %v", err))
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	userID := r.Context().Value("userID").(string)
-
-	playlist, playlistTracks, err := a.svc.RemoveTracksFromPlaylist(userID, playlistID, req.TrackList)
+	var req model.DeleteTracksFromPlaylistRequest
+	err = ctx.BodyParser(&req)
 	if err != nil {
-		writeError(w, 400, ServiceError, err)
-		return
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	resp := RemoveTracksFromPlaylistResponse{ID: playlist.ID.Hex(), Title: playlist.Title}
-	for _, playlistTrack := range playlistTracks {
-		track := TrackResponse{ID: playlistTrack.ID.Hex(), Author: playlistTrack.Author, Title: playlistTrack.Title}
-		resp.TrackList = append(resp.TrackList, track)
+	userID := ctx.Context().Value("userID").(int64)
+
+	err = api.svc.DeleteTracksFromPlaylist(userID, playlistID, req.TrackList)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
 	}
 
-	_ = json.NewEncoder(w).Encode(resp)
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
+}
+
+func (api API) AddPlaylistsToUserList(ctx *fiber.Ctx) error {
+	var req model.AddPlaylistsToUserListRequest
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	userID := ctx.Context().Value("userID").(int64)
+
+	err = api.svc.AddPlaylistsToUserList(userID, req.Playlists...)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
+}
+
+func (api API) DeletePlaylistsFromUserList(ctx *fiber.Ctx) error {
+	var req model.DeletePlaylistsFromUserListRequest
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	userID := ctx.Context().Value("userID").(int64)
+
+	err = api.svc.DeletePlaylistsFromUserList(userID, req.Playlists...)
+	if err != nil {
+		ctx.Status(400).JSON(fiber.Map{
+			"ok":    false,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	ctx.Status(200).JSON(fiber.Map{
+		"ok": true,
+	})
+	return nil
 }

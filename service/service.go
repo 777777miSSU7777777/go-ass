@@ -19,7 +19,7 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (service Service) AddTrack(title string, artistID int64, genreID int64, uploadedByID int64, uploadTrack helper.UploadTrackCallback) (model.TrackResponse, error) {
+func (service Service) AddNewTrack(title string, artistID int64, genreID int64, uploadedByID int64, uploadTrack helper.UploadTrackCallback) (model.TrackResponse, error) {
 	newTrack := model.Track{TrackTitle: title, ArtistID: artistID, GenreID: genreID, UploadedByID: uploadedByID}
 	dbTrack, err := service.repo.AddNewTrack(newTrack, uploadTrack)
 	if err != nil {
@@ -199,7 +199,7 @@ func (service Service) GetUserTrackList(userID int64) ([]model.TrackResponse, er
 	return responseTracks, nil
 }
 
-func (service Service) AddTrackToUserTrackList(userID int64, tracksID ...int64) error {
+func (service Service) AddTracksToUserTrackList(userID int64, tracksID ...int64) error {
 	err := service.repo.AddTracksToUserList(userID, tracksID...)
 	if err != nil {
 		return err
@@ -424,7 +424,7 @@ func (service Service) DeleteTracksFromPlaylist(userID int64, playlistID int64, 
 	return nil
 }
 
-func (service Service) AddPlaylistToUserList(userID int64, playlistsID ...int64) error {
+func (service Service) AddPlaylistsToUserList(userID int64, playlistsID ...int64) error {
 	err := service.repo.AddPlaylistsToUserList(userID, playlistsID...)
 	if err != nil {
 		return err

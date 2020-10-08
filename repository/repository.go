@@ -455,7 +455,7 @@ func (repo *Repository) DeleteTrack(trackID int64, deleteTrack helper.DeleteTrac
 		return err
 	}
 
-	err = deleteTrack(trackID)
+	err = deleteTrack()
 	if err != nil {
 		tx.Rollback()
 		return err

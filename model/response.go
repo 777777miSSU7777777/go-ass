@@ -16,3 +16,10 @@ type PlaylistResponse struct {
 	Title     string          `json: "playlistTitle"`
 	TrackList []TrackResponse `json: "trackList"`
 }
+
+type SignInResponse struct {
+	AccessToken  string `json: "accessToken"`
+	RefreshToken string `json: "refreshToken"`
+}
+
+type RefreshTokenResponse SignInResponse
