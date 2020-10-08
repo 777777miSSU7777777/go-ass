@@ -423,3 +423,21 @@ func (service Service) DeleteTracksFromPlaylist(userID int64, playlistID int64, 
 
 	return nil
 }
+
+func (service Service) AddPlaylistToUserList(userID int64, playlistsID ...int64) error {
+	err := service.repo.AddPlaylistsToUserList(userID, playlistsID...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service Service) DeletePlaylistsFromUserList(userID int64, playlistsID ...int64) error {
+	err := service.repo.DeletePlaylistsFromUserList(userID, playlistsID...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
