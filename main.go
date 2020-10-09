@@ -28,7 +28,7 @@ func main() {
 	apiHandlers := api.NewAPI(svc, storageManager)
 	streamAPIHandlers := api.NewStreamAPI(storageManager)
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{BodyLimit: 8 * 1024 * 1024 * 1024})
 	app.Use(cors.New())
 
 	api.SetupAPIRouter(app, apiHandlers)
@@ -40,7 +40,7 @@ func main() {
 		return nil
 	})
 
-	fmt.Println("started")
+	fmt.Println("App started")
 	err := app.Listen(":8080")
 	if err != nil {
 		fmt.Println(err)

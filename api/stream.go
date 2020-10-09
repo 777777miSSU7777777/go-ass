@@ -1,8 +1,6 @@
 package api
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,14 +13,7 @@ func NewStreamAPI(storageManager StorageManager) StreamAPI {
 }
 
 func (streamAPI StreamAPI) Stream(ctx *fiber.Ctx) error {
-	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	trackID := ctx.Params("trackId")
 
 	seg := ctx.Params("seg")
 
@@ -43,14 +34,7 @@ func (streamAPI StreamAPI) Stream(ctx *fiber.Ctx) error {
 }
 
 func (streamAPI StreamAPI) Download(ctx *fiber.Ctx) error {
-	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	trackID := ctx.Params("trackId")
 
 	streamAPI.storageManager.ServeMp3(ctx, trackID)
 	return nil

@@ -6,6 +6,7 @@ import (
 	"github.com/777777miSSU7777777/go-ass/helper"
 	"github.com/777777miSSU7777777/go-ass/model"
 
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -48,7 +49,7 @@ func (repo *Repository) GetAllArtists() ([]model.Artist, error) {
 	return artists, nil
 }
 
-func (repo *Repository) GetArtist(artistID int64) (model.Artist, error) {
+func (repo *Repository) GetArtist(artistID string) (model.Artist, error) {
 	var artist model.Artist
 	err := repo.db.Where(&model.Artist{ArtistID: artistID}).First(&artist).Error
 	if err != nil {
@@ -68,6 +69,7 @@ func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, erro
 		}
 	}()
 
+	newArtist.ArtistID = uuid.New().String()
 	result := tx.Create(&newArtist)
 
 	err := result.Error
@@ -101,7 +103,7 @@ func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, 
 	return artist, nil
 }
 
-func (repo *Repository) DeleteArtist(artistID int64) error {
+func (repo *Repository) DeleteArtist(artistID string) error {
 	err := repo.db.Delete(&model.Artist{ArtistID: artistID}).Error
 	if err != nil {
 		return err
@@ -120,7 +122,7 @@ func (repo *Repository) GetAllGenres() ([]model.Genre, error) {
 	return genres, nil
 }
 
-func (repo *Repository) GetGenre(genreID int64) (model.Genre, error) {
+func (repo *Repository) GetGenre(genreID string) (model.Genre, error) {
 	var genre model.Genre
 	err := repo.db.Where(&model.Genre{GenreID: genreID}).First(&genre).Error
 	if err != nil {
@@ -140,6 +142,7 @@ func (repo *Repository) AddNewGenre(newGenre model.Genre) (model.Genre, error) {
 		}
 	}()
 
+	newGenre.GenreID = uuid.New().String()
 	result := tx.Create(&newGenre)
 
 	err := result.Error
@@ -183,7 +186,7 @@ func (repo *Repository) GetAllPlaylists() ([]model.Playlist, error) {
 	return playlists, nil
 }
 
-func (repo *Repository) GetUserPlaylists(userID int64) ([]model.UserPlaylists, error) {
+func (repo *Repository) GetUserPlaylists(userID string) ([]model.UserPlaylists, error) {
 	var userPlaylists []model.UserPlaylists
 	err := repo.db.Where(model.UserPlaylists{UserID: userID}).Find(&userPlaylists).Error
 	if err != nil {
@@ -193,7 +196,7 @@ func (repo *Repository) GetUserPlaylists(userID int64) ([]model.UserPlaylists, e
 	return userPlaylists, nil
 }
 
-func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
+func (repo *Repository) GetPlaylist(playlistID string) (model.Playlist, error) {
 	var playlist model.Playlist
 	err := repo.db.Where(&model.Playlist{PlaylistID: playlistID}).First(&playlist).Error
 	if err != nil {
@@ -203,7 +206,7 @@ func (repo *Repository) GetPlaylist(playlistID int64) (model.Playlist, error) {
 	return playlist, nil
 }
 
-func (repo *Repository) GetPlaylistTracks(playlistID int64) ([]model.PlaylistTracks, error) {
+func (repo *Repository) GetPlaylistTracks(playlistID string) ([]model.PlaylistTracks, error) {
 	var playlistTracks []model.PlaylistTracks
 	err := repo.db.Where(&model.PlaylistTracks{PlaylistID: playlistID}).Find(&playlistTracks).Error
 	if err != nil {
@@ -223,6 +226,7 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 		}
 	}()
 
+	newPlaylist.PlaylistID = uuid.New().String()
 	result := tx.Create(&newPlaylist)
 
 	err := result.Error
@@ -263,7 +267,7 @@ func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Pl
 	return playlist, nil
 }
 
-func (repo *Repository) DeletePlaylist(playlistID int64) error {
+func (repo *Repository) DeletePlaylist(playlistID string) error {
 	err := repo.db.Delete(&model.Playlist{PlaylistID: playlistID}).Error
 	if err != nil {
 		return err
@@ -272,7 +276,7 @@ func (repo *Repository) DeletePlaylist(playlistID int64) error {
 	return nil
 }
 
-func (repo *Repository) AddTracksToPlaylist(playlistID int64, tracksID ...int64) error {
+func (repo *Repository) AddTracksToPlaylist(playlistID string, tracksID ...string) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -301,7 +305,7 @@ func (repo *Repository) AddTracksToPlaylist(playlistID int64, tracksID ...int64)
 	return nil
 }
 
-func (repo *Repository) DeleteTracksFromPlaylist(playlistID int64, tracksID ...int64) error {
+func (repo *Repository) DeleteTracksFromPlaylist(playlistID string, tracksID ...string) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -338,7 +342,7 @@ func (repo *Repository) GetAllTracks() ([]model.Track, error) {
 	return tracks, nil
 }
 
-func (repo *Repository) GetTrack(trackID int64) (model.Track, error) {
+func (repo *Repository) GetTrack(trackID string) (model.Track, error) {
 	var track model.Track
 	err := repo.db.Where(&model.Track{TrackID: trackID}).First(&track).Error
 	if err != nil {
@@ -358,6 +362,7 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 		}
 	}()
 
+	newTrack.TrackID = uuid.New().String()
 	result := tx.Create(&newTrack)
 
 	err := result.Error
@@ -366,18 +371,34 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 		return model.Track{}, err
 	}
 
-	if newTrack.UploadedByID != 0 {
-		userTracks := model.UserTracks{UserID: newTrack.UploadedByID, TrackID: newTrack.TrackID}
-		err := tx.Create(&userTracks).Error
+	if newTrack.ArtistID != "" {
+		var artist model.Artist
+		err := tx.Where(&model.Artist{ArtistID: newTrack.ArtistID}).First(&artist).Error
 		if err != nil {
 			tx.Rollback()
 			return model.Track{}, err
 		}
 	}
 
-	if newTrack.GenreID != 0 {
+	if newTrack.GenreID != "" {
+		var genre model.Genre
+		err := tx.Where(&model.Genre{GenreID: newTrack.GenreID}).First(&genre).Error
+		if err != nil {
+			tx.Rollback()
+			return model.Track{}, err
+		}
+
 		genreTracks := model.GenreTracks{GenreID: newTrack.GenreID, TrackID: newTrack.TrackID}
-		err := tx.Create(&genreTracks).Error
+		err = tx.Create(&genreTracks).Error
+		if err != nil {
+			tx.Rollback()
+			return model.Track{}, err
+		}
+	}
+
+	if newTrack.UploadedByID != "" {
+		userTracks := model.UserTracks{UserID: newTrack.UploadedByID, TrackID: newTrack.TrackID}
+		err := tx.Create(&userTracks).Error
 		if err != nil {
 			tx.Rollback()
 			return model.Track{}, err
@@ -415,7 +436,7 @@ func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, erro
 	return track, nil
 }
 
-func (repo *Repository) DeleteTrack(trackID int64, deleteTrack helper.DeleteTrackCallback) error {
+func (repo *Repository) DeleteTrack(trackID string, deleteTrack helper.DeleteTrackCallback) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -474,7 +495,7 @@ func (repo *Repository) GetAllUsers() ([]model.User, error) {
 	return users, nil
 }
 
-func (repo *Repository) GetUser(userID int64) (model.User, error) {
+func (repo *Repository) GetUser(userID string) (model.User, error) {
 	var user model.User
 	err := repo.db.Where(&model.User{UserID: userID}).First(&user).Error
 	if err != nil {
@@ -504,6 +525,7 @@ func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 		}
 	}()
 
+	newUser.UserID = uuid.New().String()
 	result := tx.Create(&newUser)
 
 	err := result.Error
@@ -537,7 +559,7 @@ func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
 	return user, nil
 }
 
-func (repo *Repository) DeleteUser(userID int64) error {
+func (repo *Repository) DeleteUser(userID string) error {
 	err := repo.db.Delete(&model.User{UserID: userID}).Error
 	if err != nil {
 		return err
@@ -546,7 +568,7 @@ func (repo *Repository) DeleteUser(userID int64) error {
 	return nil
 }
 
-func (repo *Repository) AddRefreshToken(userID int64, refreshToken string) error {
+func (repo *Repository) AddRefreshToken(userID string, refreshToken string) error {
 	userTokens := model.UserTokens{UserID: userID, Token: refreshToken}
 	err := repo.db.Create(&userTokens).Error
 	if err != nil {
@@ -556,7 +578,7 @@ func (repo *Repository) AddRefreshToken(userID int64, refreshToken string) error
 	return nil
 }
 
-func (repo *Repository) UpdateRefreshToken(userID int64, refreshToken string, newRefreshToken string) error {
+func (repo *Repository) UpdateRefreshToken(userID string, refreshToken string, newRefreshToken string) error {
 	var userTokens model.UserTokens
 	newUserTokens := model.UserTokens{UserID: userID, Token: newRefreshToken}
 	err := repo.db.Where(&model.UserTokens{UserID: userID, Token: refreshToken}).Find(&userTokens).Error
@@ -572,7 +594,7 @@ func (repo *Repository) UpdateRefreshToken(userID int64, refreshToken string, ne
 	return nil
 }
 
-func (repo *Repository) DeleteRefreshToken(userID int64, refreshToken string) error {
+func (repo *Repository) DeleteRefreshToken(userID string, refreshToken string) error {
 	err := repo.db.Delete(&model.UserTokens{UserID: userID, Token: refreshToken}).Error
 	if err != nil {
 		return err
@@ -581,7 +603,7 @@ func (repo *Repository) DeleteRefreshToken(userID int64, refreshToken string) er
 	return nil
 }
 
-func (repo *Repository) GetUserTrackList(userID int64) ([]model.UserTracks, error) {
+func (repo *Repository) GetUserTrackList(userID string) ([]model.UserTracks, error) {
 	var userTracks []model.UserTracks
 
 	err := repo.db.Where(&model.UserTracks{UserID: userID}).Find(&userTracks).Error
@@ -592,7 +614,7 @@ func (repo *Repository) GetUserTrackList(userID int64) ([]model.UserTracks, erro
 	return userTracks, nil
 }
 
-func (repo *Repository) AddTracksToUserList(userID int64, tracksID ...int64) error {
+func (repo *Repository) AddTracksToUserList(userID string, tracksID ...string) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -621,7 +643,7 @@ func (repo *Repository) AddTracksToUserList(userID int64, tracksID ...int64) err
 	return nil
 }
 
-func (repo *Repository) DeleteTracksFromUserList(userID int64, tracksID ...int64) error {
+func (repo *Repository) DeleteTracksFromUserList(userID string, tracksID ...string) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -648,7 +670,7 @@ func (repo *Repository) DeleteTracksFromUserList(userID int64, tracksID ...int64
 	return nil
 }
 
-func (repo *Repository) AddPlaylistsToUserList(userID int64, playlistsID ...int64) error {
+func (repo *Repository) AddPlaylistsToUserList(userID string, playlistsID ...string) error {
 	tx := repo.db.Begin()
 
 	defer func() {
@@ -677,7 +699,7 @@ func (repo *Repository) AddPlaylistsToUserList(userID int64, playlistsID ...int6
 	return nil
 }
 
-func (repo *Repository) DeletePlaylistsFromUserList(userID int64, playlistsID ...int64) error {
+func (repo *Repository) DeletePlaylistsFromUserList(userID string, playlistsID ...string) error {
 	tx := repo.db.Begin()
 
 	defer func() {

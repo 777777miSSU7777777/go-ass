@@ -12,6 +12,7 @@ func SetupAPIRouter(app *fiber.App, api API) {
 	publicAPI.Get("/audio/playlists/:playlistId", api.GetPlaylistByID)
 
 	privateAPI := app.Group("/api")
+	privateAPI.Use(JWTAuthMiddleware)
 	privateAPI.Post("/audio/tracks", api.AddNewTrack)
 	privateAPI.Put("/audio/tracks/:trackId", api.UpdateTrackByID)
 	privateAPI.Delete("/audio/tracks/:trackId", api.DeleteTrackByID)

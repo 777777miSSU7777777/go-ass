@@ -1,72 +1,58 @@
 package model
 
-import (
-	"gorm.io/gorm"
-)
-
 type Artist struct {
-	gorm.Model
-	ArtistID   int64  `gorm: "column: artist_id; type: bigint; primary_key; unique; not null"`
-	ArtistName string `gorm: "column: artist_name; type: nvarchar(50); unique; not null"`
+	ArtistID   string `gorm:"column:artist_id;type:uuid;primaryKey;autoIncrement;unique;not null"`
+	ArtistName string `gorm:"column:artist_name;type:varchar(50);unique;not null"`
 }
 
 type GenreTracks struct {
-	gorm.Model
-	GenreID int64 `gorm: "column: genre_id; type: bigint; primary_key; auto_increment: false; unique; not null"`
-	TrackID int64 `gorm: "column: track_id; type: bigint; primary_key; auto_increment: false; unique; not null"`
+	GenreID string `gorm:"column:genre_id;type:uuid;primaryKey;not null"`
+	TrackID string `gorm:"column:track_id;type:uuid;primaryKey;not null"`
 }
 
 type Genre struct {
-	gorm.Model
-	GenreID    int64  `gorm: "column: genre_id; type: bigint; primary_key; unique; not null"`
-	GenreTitle string `gorm: "column: genre_title; type: nvarchar(50); unique; not null"`
+	GenreID    string `gorm:"column:genre_id;type:uuid;primaryKey;autoIncrement;unique; not null"`
+	GenreTitle string `gorm:"column:genre_title;type:varchar(50);unique;not null"`
 }
 
 type PlaylistTracks struct {
-	gorm.Model
-	PlaylistID int64 `gorm: "column: playlist_id; type: bigint; primary_key; auto_increment: false; unique; not null"`
-	TrackID    int64 `gorm: "column: track_id; type: bigint; primary_key; auto_increment: false; unique; not null"`
+	PlaylistID string `gorm:"column:playlist_id;type:uuid;primaryKey;not null"`
+	TrackID    string `gorm:"column:track_id;type:uuid;primaryKey;not null"`
 }
 
 type Playlist struct {
-	gorm.Model
-	PlaylistID    int64  `gorm: "column: playlist_id; type: bigint; primary_key; unique; not null"`
-	PlaylistTitle string `gorm: "column: playlist_title; type: nvarchar(50); unique; not null"`
-	CreatedByID   int64  `gorm: "column: created_by_id; type: bigint; not null"`
+	PlaylistID    string `gorm:"column:playlist_id;type:uuid;primaryKey;autoIncrement;unique;not null"`
+	PlaylistTitle string `gorm:"column:playlist_title;type:varchar(50);not null"`
+	CreatedByID   string `gorm:"column:created_by_id;type:uuid;not null"`
 }
 
 type Track struct {
-	gorm.Model
-	TrackID      int64  `gorm: "column: track_id; type: bigint; primary_key; unique; not null"`
-	TrackTitle   string `gorm: "column: track_title; type: nvarchar(50); not null"`
-	ArtistID     int64  `gorm: "column: artist_id; type: bigint; not null"`
-	GenreID      int64  `gorm: "column: genre_id; type: bigint;"`
-	UploadedByID int64  `gorm: "column: uploaded_by_id: type: bigint; not null"`
+	TrackID      string `gorm:"column:track_id;type:uuid;primaryKey;autoIncrement;unique;not null"`
+	TrackTitle   string `gorm:"column:track_title;type:varchar(50);not null"`
+	ArtistID     string `gorm:"column:artist_id;type:uuid;not null"`
+	GenreID      string `gorm:"column:genre_id;type:uuid; not null"`
+	UploadedByID string `gorm:"column:uploaded_by_id;type:uuid;not null"`
 }
 
 type UserPlaylists struct {
-	gorm.Model
-	UserID     int64 `gorm: "column: user_id; type: bigint; primary_key; auto_increment: false; unique; not null"`
-	PlaylistID int64 `gorm: "column: playlist_id type: bigint; primary_key; auto_increment: false; unique; not null"`
+	UserID     string `gorm:"column:user_id;type:uuid;primaryKey;not null"`
+	PlaylistID string `gorm:"column:playlist_id type:uuid;primaryKey;not null"`
 }
 
 type UserTokens struct {
-	gorm.Model
-	UserID int64  `gorm: "type: bigint; primary_key; not null"`
-	Token  string `gorm: "type: tinytext; primary_key; not null"`
+	UserID string `gorm:"type:uuid;primaryKey;not null"`
+	Token  string `gorm:"type:text;primaryKey;not null"`
 }
 
 type UserTracks struct {
-	gorm.Model
-	UserID  int64 `gorm: "type: bigint; primary_key; auto_increment: false; unique; not null"`
-	TrackID int64 `gorm: "type: bigint; primary_key; auto_increment: false; unique; not null"`
+	UserID  string `gorm:"type:uuid;primaryKey;not null"`
+	TrackID string `gorm:"type:uuid;primaryKey;not null"`
 }
 
 type User struct {
-	gorm.Model
-	UserID   int64  `gorm: "column: user_id; type: bigint; primary_key; unique; not null"`
-	Role     string `gorm: "column: role; type: nvarchar(50); not null;"`
-	Email    string `gorm: "column: email; type: nvarchar(50); unique; not null"`
-	Username string `gorm: "column: username; type: nvarchar(50); unique; not null"`
-	Password string `gorm: "column: password; type: tinytext; not null"`
+	UserID   string `gorm:"column:user_id;type:uuid;primaryKey;autoIncrement;unique;not null"`
+	Role     string `gorm:"column:role;type:varchar(50);not null;"`
+	Email    string `gorm:"column:email;type:varchar(50);unique;not null"`
+	Username string `gorm:"column:username;type:varchar(50);unique;not null"`
+	Password string `gorm:"column:password;type:text;not null"`
 }

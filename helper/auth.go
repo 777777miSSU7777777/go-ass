@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	jwt "github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const UserRole = "user"
@@ -15,6 +15,9 @@ const RefreshTokenDuration = 518400
 const AccessTokenType = "access"
 const RefreshTokenType = "refresh"
 const SecretKey = "NOT A SECRET KEY"
+
+var NoTokenError = fmt.Errorf("There is no token")
+var InvalidTokenError = fmt.Errorf("Token is invalid ")
 
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -26,25 +29,25 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func GenerateTokens(userID int64) (string, string, error) {
+func GenerateTokens(userID string) (string, string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": userID,
-		"role": UserRole,
-		"nbf": time.Now().Add(time.Second * AccessTokenDuration),
+		"role":   UserRole,
+		"exp":    time.Now().Add(time.Second * AccessTokenDuration).Unix(),
 	})
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims {
-		"userID": userID,
-		"role": UserRole,
-		"nbf": time.Now().Add(time.Second * RefreshTokenDuration),
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userId": userID,
+		"role":   UserRole,
+		"exp":    time.Now().Add(time.Second * RefreshTokenDuration).Unix(),
 	})
-	
-	accessTokenString, err := accessToken.SignedString(SecretKey)
+
+	accessTokenString, err := accessToken.SignedString([]byte(SecretKey))
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshTokenString, err := refreshToken.SignedString(SecretKey)
+	refreshTokenString, err := refreshToken.SignedString([]byte(SecretKey))
 	if err != nil {
 		return "", "", err
 	}
@@ -62,10 +65,14 @@ func ParseToken(tokenString string) (map[string]interface{}, error) {
 		return []byte(SecretKey), nil
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
 		return claims, nil
 	} else {
-		return nil, err
+		return nil, InvalidTokenError
 	}
 }

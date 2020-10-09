@@ -19,7 +19,7 @@ func New(r repository.Repository) Service {
 	return Service{r}
 }
 
-func (service Service) AddNewTrack(title string, artistID int64, genreID int64, uploadedByID int64, uploadTrack helper.UploadTrackCallback) (model.TrackResponse, error) {
+func (service Service) AddNewTrack(title string, artistID string, genreID string, uploadedByID string, uploadTrack helper.UploadTrackCallback) (model.TrackResponse, error) {
 	newTrack := model.Track{TrackTitle: title, ArtistID: artistID, GenreID: genreID, UploadedByID: uploadedByID}
 	dbTrack, err := service.repo.AddNewTrack(newTrack, uploadTrack)
 	if err != nil {
@@ -56,7 +56,7 @@ func (service Service) GetAllTracks() ([]model.TrackResponse, error) {
 	return responseTracks, nil
 }
 
-func (service Service) GetTrackByID(trackID int64) (model.TrackResponse, error) {
+func (service Service) GetTrackByID(trackID string) (model.TrackResponse, error) {
 	dbTrack, err := service.repo.GetTrack(trackID)
 	if err != nil {
 		return model.TrackResponse{}, err
@@ -71,7 +71,7 @@ func (service Service) GetTrackByID(trackID int64) (model.TrackResponse, error) 
 	return trackResponse, nil
 }
 
-func (service Service) UpdateTrackByID(trackID int64, title string, artistID int64, genreID int64) (model.TrackResponse, error) {
+func (service Service) UpdateTrackByID(trackID string, title string, artistID string, genreID string) (model.TrackResponse, error) {
 	updatedTrack := model.Track{TrackID: trackID, TrackTitle: title, ArtistID: artistID, GenreID: genreID}
 	dbTrack, err := service.repo.UpdateTrack(updatedTrack)
 	if err != nil {
@@ -87,7 +87,7 @@ func (service Service) UpdateTrackByID(trackID int64, title string, artistID int
 	return trackResponse, nil
 }
 
-func (service Service) DeleteTrackByID(trackID int64, deleteTrack helper.DeleteTrackCallback) error {
+func (service Service) DeleteTrackByID(trackID string, deleteTrack helper.DeleteTrackCallback) error {
 	err := service.repo.DeleteTrack(trackID, deleteTrack)
 	if err != nil {
 		return err
@@ -123,6 +123,11 @@ func (service Service) SignIn(email string, password string) (string, string, er
 			return "", "", err
 		}
 
+		err = service.repo.AddRefreshToken(user.UserID, refreshToken)
+		if err != nil {
+			return "", "", err
+		}
+
 		return accessToken, refreshToken, nil
 	}
 
@@ -136,7 +141,7 @@ func (service Service) RefreshToken(token string) (string, string, error) {
 		return "", "", err
 	}
 
-	userID := tokenClaims["userID"].(int64)
+	userID := tokenClaims["userId"].(string)
 
 	accessToken, refreshToken, err := helper.GenerateTokens(userID)
 	if err != nil {
@@ -157,7 +162,7 @@ func (service Service) SignOut(token string) error {
 		return err
 	}
 
-	userID := tokenClaims["userID"].(int64)
+	userID := tokenClaims["userId"].(string)
 
 	err = service.repo.DeleteRefreshToken(userID, token)
 
@@ -168,7 +173,7 @@ func (service Service) SignOut(token string) error {
 	return nil
 }
 
-func (service Service) GetUserTrackList(userID int64) ([]model.TrackResponse, error) {
+func (service Service) GetUserTrackList(userID string) ([]model.TrackResponse, error) {
 	userTracks, err := service.repo.GetUserTrackList(userID)
 	if err != nil {
 		return nil, err
@@ -199,7 +204,7 @@ func (service Service) GetUserTrackList(userID int64) ([]model.TrackResponse, er
 	return responseTracks, nil
 }
 
-func (service Service) AddTracksToUserTrackList(userID int64, tracksID ...int64) error {
+func (service Service) AddTracksToUserTrackList(userID string, tracksID ...string) error {
 	err := service.repo.AddTracksToUserList(userID, tracksID...)
 	if err != nil {
 		return err
@@ -208,7 +213,7 @@ func (service Service) AddTracksToUserTrackList(userID int64, tracksID ...int64)
 	return nil
 }
 
-func (service Service) DeleteTracksFromUserTrackList(userID int64, tracksID ...int64) error {
+func (service Service) DeleteTracksFromUserTrackList(userID string, tracksID ...string) error {
 	err := service.repo.DeleteTracksFromUserList(userID, tracksID...)
 	if err != nil {
 		return err
@@ -253,7 +258,7 @@ func (service Service) GetAllPlaylists() ([]model.PlaylistResponse, error) {
 	return responsePlaylists, nil
 }
 
-func (service Service) GetUserPlaylists(userID int64) ([]model.PlaylistResponse, error) {
+func (service Service) GetUserPlaylists(userID string) ([]model.PlaylistResponse, error) {
 	dbUserPlaylists, err := service.repo.GetUserPlaylists(userID)
 	if err != nil {
 		return nil, err
@@ -300,7 +305,7 @@ func (service Service) GetUserPlaylists(userID int64) ([]model.PlaylistResponse,
 	return responsePlaylists, nil
 }
 
-func (service Service) CreateNewPlaylist(title string, createdByID int64, trackList []int64) (model.PlaylistResponse, error) {
+func (service Service) CreateNewPlaylist(title string, createdByID string, trackList []string) (model.PlaylistResponse, error) {
 	newPlaylist := model.Playlist{PlaylistTitle: title, CreatedByID: createdByID}
 	dbPlaylist, err := service.repo.AddNewPlaylist(newPlaylist)
 	if err != nil {
@@ -338,7 +343,7 @@ func (service Service) CreateNewPlaylist(title string, createdByID int64, trackL
 	return playlistResponse, nil
 }
 
-func (service Service) GetPlaylistByID(playlistID int64) (model.PlaylistResponse, error) {
+func (service Service) GetPlaylistByID(playlistID string) (model.PlaylistResponse, error) {
 	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
 	if err != nil {
 		return model.PlaylistResponse{}, err
@@ -370,7 +375,7 @@ func (service Service) GetPlaylistByID(playlistID int64) (model.PlaylistResponse
 	return playlistResponse, nil
 }
 
-func (service Service) DeletePlaylistByID(playlistID int64, userID int64) error {
+func (service Service) DeletePlaylistByID(playlistID string, userID string) error {
 	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
 	if err != nil {
 		return err
@@ -388,7 +393,7 @@ func (service Service) DeletePlaylistByID(playlistID int64, userID int64) error 
 	return nil
 }
 
-func (service Service) AddTracksToPlaylist(userID int64, playlistID int64, trackList []int64) error {
+func (service Service) AddTracksToPlaylist(userID string, playlistID string, trackList []string) error {
 	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
 	if err != nil {
 		return err
@@ -406,7 +411,7 @@ func (service Service) AddTracksToPlaylist(userID int64, playlistID int64, track
 	return nil
 }
 
-func (service Service) DeleteTracksFromPlaylist(userID int64, playlistID int64, trackList []int64) error {
+func (service Service) DeleteTracksFromPlaylist(userID string, playlistID string, trackList []string) error {
 	dbPlaylist, err := service.repo.GetPlaylist(playlistID)
 	if err != nil {
 		return err
@@ -424,7 +429,7 @@ func (service Service) DeleteTracksFromPlaylist(userID int64, playlistID int64, 
 	return nil
 }
 
-func (service Service) AddPlaylistsToUserList(userID int64, playlistsID ...int64) error {
+func (service Service) AddPlaylistsToUserList(userID string, playlistsID ...string) error {
 	err := service.repo.AddPlaylistsToUserList(userID, playlistsID...)
 	if err != nil {
 		return err
@@ -433,7 +438,7 @@ func (service Service) AddPlaylistsToUserList(userID int64, playlistsID ...int64
 	return nil
 }
 
-func (service Service) DeletePlaylistsFromUserList(userID int64, playlistsID ...int64) error {
+func (service Service) DeletePlaylistsFromUserList(userID string, playlistsID ...string) error {
 	err := service.repo.DeletePlaylistsFromUserList(userID, playlistsID...)
 	if err != nil {
 		return err

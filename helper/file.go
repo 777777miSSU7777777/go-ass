@@ -4,20 +4,21 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
-type UploadTrackCallback func(id int64) error
+type UploadTrackCallback func(id string) error
 
 type DeleteTrackCallback func() error
 
 var MasterManifestTemplate = "#EXTM3U\n" +
-	"#EXT-X-STREAM-INF:BANDWITH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
 	"64k.m3u8\n" +
-	"#EXT-X-STREAM-INF:BANDWITH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
 	"96k.m3u8\n" +
-	"#EXT-X-STREAM-INF:BANDWITH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
 	"128k.m3u8\n" +
-	"#EXT-X-STREAM-INF:BANDWITH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
 	"192k.m3u8\n"
 
 func SaveMP3File(dirPath string, filename string, fileBytes []byte) error {
@@ -26,7 +27,7 @@ func SaveMP3File(dirPath string, filename string, fileBytes []byte) error {
 		return err
 	}
 
-	file, err := os.Create(dirPath + "/" + filename)
+	file, err := os.Create(filepath.FromSlash(dirPath + "/" + filename))
 	if err != nil {
 		return err
 	}
@@ -48,30 +49,30 @@ func TranscodeToHLS(dirPath string, inputFilePath string) error {
 	}
 
 	cmd := exec.Command("ffmpeg",
-		"-i", inputFilePath,
+		"-i", filepath.FromSlash(inputFilePath),
 
 		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "64k", "-map", "0:a:0",
 		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
-		dirPath+"/seg%02d_64k.ts", dirPath+"/64k.m3u8",
+		filepath.FromSlash(dirPath+"/seg%02d_64k.ts"), filepath.FromSlash(dirPath+"/64k.m3u8"),
 
 		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "96k", "-map", "0:a:0",
 		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
-		dirPath+"/seg%02d_96k.ts", dirPath+"/96k.m3u8",
+		filepath.FromSlash(dirPath+"/seg%02d_96k.ts"), filepath.FromSlash(dirPath+"/96k.m3u8"),
 
 		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "128k", "-map", "0:a:0",
 		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
-		dirPath+"/seg%02d_128k.ts", dirPath+"/128k.m3u8",
+		filepath.FromSlash(dirPath+"/seg%02d_128k.ts"), filepath.FromSlash(dirPath+"/128k.m3u8"),
 
 		"-vn", "-ac", "2", "-acodec", "libmp3lame", "-b:a", "192k", "-map", "0:a:0",
 		"-hls_playlist_type", "vod", "-hls_time", "5", "-hls_segment_filename",
-		dirPath+"/seg%02d_192k.ts", dirPath+"/192k.m3u8")
+		filepath.FromSlash(dirPath+"/seg%02d_192k.ts"), filepath.FromSlash(dirPath+"/192k.m3u8"))
 
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(dirPath+"/master.m3u8", []byte(MasterManifestTemplate), 0755)
+	err = ioutil.WriteFile(filepath.FromSlash(dirPath+"/master.m3u8"), []byte(MasterManifestTemplate), 0755)
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func TranscodeToHLS(dirPath string, inputFilePath string) error {
 }
 
 func DeleteDir(dirPath string) error {
-	err := os.RemoveAll(dirPath)
+	err := os.RemoveAll(filepath.FromSlash(dirPath))
 	if err != nil {
 		return err
 	}

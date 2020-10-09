@@ -6,13 +6,13 @@ type ArtistResponse struct {
 }
 
 type TrackResponse struct {
-	ID     int64  `json: "trackID"`
+	ID     string `json: "trackID"`
 	Title  string `json: "trackTitle"`
 	Artist string `json: "artistName"`
 }
 
 type PlaylistResponse struct {
-	ID        int64           `json: "playlistId"`
+	ID        string          `json: "playlistId"`
 	Title     string          `json: "playlistTitle"`
 	TrackList []TrackResponse `json: "trackList"`
 }

@@ -2,8 +2,8 @@ package model
 
 type UpdateTrackByIDRequest struct {
 	TrackTitle string `json: "trackTitle"`
-	ArtistID   int64  `json: "artistId`
-	GenreID    int64  `json: "genreId`
+	ArtistID   string `json: "artistId`
+	GenreID    string `json: "genreId`
 }
 
 type SignUpRequest struct {
@@ -24,14 +24,14 @@ type RefreshTokenRequest struct {
 type SignOutRequest RefreshTokenRequest
 
 type AddTracksToUserListRequest struct {
-	TrackList []int64 `json: "trackList"`
+	TrackList []string `json: "trackList"`
 }
 
 type DeleteTracksFromUserListRequest AddTracksToUserListRequest
 
 type CreateNewPlaylistRequest struct {
-	PlaylistTitle string  `json: "playlistTitle`
-	TrackList     []int64 `json: "trackList`
+	PlaylistTitle string   `json: "playlistTitle`
+	TrackList     []string `json: "trackList`
 }
 
 type AddTracksToPlaylistRequest AddTracksToUserListRequest
@@ -39,7 +39,7 @@ type AddTracksToPlaylistRequest AddTracksToUserListRequest
 type DeleteTracksFromPlaylistRequest AddTracksToPlaylistRequest
 
 type AddPlaylistsToUserListRequest struct {
-	Playlists []int64 `json: "playlists`
+	Playlists []string `json: "playlists`
 }
 
 type DeletePlaylistsFromUserListRequest AddPlaylistsToUserListRequest

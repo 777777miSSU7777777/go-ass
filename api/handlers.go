@@ -1,8 +1,6 @@
 package api
 
 import (
-	"strconv"
-
 	"github.com/777777miSSU7777777/go-ass/model"
 
 	"github.com/777777miSSU7777777/go-ass/service"
@@ -19,27 +17,11 @@ func NewAPI(svc service.Service, storageManager StorageManager) API {
 }
 
 func (api API) AddNewTrack(ctx *fiber.Ctx) error {
-	artistID, err := strconv.ParseInt(ctx.FormValue("artistID"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
-
+	artistID := ctx.FormValue("artistID")
 	title := ctx.FormValue("title")
+	genreID := ctx.FormValue("genreID")
 
-	genreID, err := strconv.ParseInt(ctx.FormValue("genreID"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
-
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	fileHeader, err := ctx.FormFile("audiofile")
 	if err != nil {
@@ -97,14 +79,7 @@ func (api API) GetAllTracks(ctx *fiber.Ctx) error {
 }
 
 func (api API) GetTrackByID(ctx *fiber.Ctx) error {
-	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	trackID := ctx.Params("trackId")
 
 	track, err := api.svc.GetTrackByID(trackID)
 	if err != nil {
@@ -123,17 +98,10 @@ func (api API) GetTrackByID(ctx *fiber.Ctx) error {
 }
 
 func (api API) UpdateTrackByID(ctx *fiber.Ctx) error {
-	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	trackID := ctx.Params("trackId")
 
 	var req model.UpdateTrackByIDRequest
-	err = ctx.BodyParser(&req)
+	err := ctx.BodyParser(&req)
 	if err != nil {
 		ctx.Status(400).JSON(fiber.Map{
 			"ok":    false,
@@ -159,18 +127,11 @@ func (api API) UpdateTrackByID(ctx *fiber.Ctx) error {
 }
 
 func (api API) DeleteTrackByID(ctx *fiber.Ctx) error {
-	trackID, err := strconv.ParseInt(ctx.Params("trackId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	trackID := ctx.Params("trackId")
 
 	deleteTrack := api.storageManager.DeleteTrack(trackID)
 
-	err = api.svc.DeleteTrackByID(trackID, deleteTrack)
+	err := api.svc.DeleteTrackByID(trackID, deleteTrack)
 	if err != nil {
 		ctx.Status(400).JSON(fiber.Map{
 			"ok":    false,
@@ -294,7 +255,7 @@ func (api API) SignOut(ctx *fiber.Ctx) error {
 }
 
 func (api API) GetUserTrackList(ctx *fiber.Ctx) error {
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	userTrackList, err := api.svc.GetUserTrackList(userID)
 	if err != nil {
@@ -312,7 +273,7 @@ func (api API) GetUserTrackList(ctx *fiber.Ctx) error {
 }
 
 func (api API) AddTracksToUserTrackList(ctx *fiber.Ctx) error {
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	var req model.AddTracksToUserListRequest
 	err := ctx.BodyParser(&req)
@@ -340,7 +301,7 @@ func (api API) AddTracksToUserTrackList(ctx *fiber.Ctx) error {
 }
 
 func (api API) DeleteTracksFromUserList(ctx *fiber.Ctx) error {
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	var req model.DeleteTracksFromUserListRequest
 	err := ctx.BodyParser(&req)
@@ -385,7 +346,7 @@ func (api API) GetAllPlaylists(ctx *fiber.Ctx) error {
 }
 
 func (api API) GetUserPlaylists(ctx *fiber.Ctx) error {
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	userPlaylists, err := api.svc.GetUserPlaylists(userID)
 	if err != nil {
@@ -404,7 +365,7 @@ func (api API) GetUserPlaylists(ctx *fiber.Ctx) error {
 }
 
 func (api API) CreateNewPlaylist(ctx *fiber.Ctx) error {
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	var req model.CreateNewPlaylistRequest
 	err := ctx.BodyParser(&req)
@@ -433,14 +394,7 @@ func (api API) CreateNewPlaylist(ctx *fiber.Ctx) error {
 }
 
 func (api API) GetPlaylistByID(ctx *fiber.Ctx) error {
-	playlistID, err := strconv.ParseInt(ctx.Params("playlistId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	playlistID := ctx.Params("playlistId")
 
 	playlist, err := api.svc.GetPlaylistByID(playlistID)
 	if err != nil {
@@ -459,18 +413,11 @@ func (api API) GetPlaylistByID(ctx *fiber.Ctx) error {
 }
 
 func (api API) DeletePlaylistByID(ctx *fiber.Ctx) error {
-	playlistID, err := strconv.ParseInt(ctx.Params("playlistId"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	playlistID := ctx.Params("playlistId")
 
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
-	err = api.svc.DeletePlaylistByID(playlistID, userID)
+	err := api.svc.DeletePlaylistByID(playlistID, userID)
 	if err != nil {
 		ctx.Status(400).JSON(fiber.Map{
 			"ok":    false,
@@ -486,17 +433,10 @@ func (api API) DeletePlaylistByID(ctx *fiber.Ctx) error {
 }
 
 func (api API) AddTracksToPlaylist(ctx *fiber.Ctx) error {
-	playlistID, err := strconv.ParseInt(ctx.Params("playlistID"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	playlistID := ctx.Params("playlistID")
 
 	var req model.AddTracksToPlaylistRequest
-	err = ctx.BodyParser(&req)
+	err := ctx.BodyParser(&req)
 	if err != nil {
 		ctx.Status(400).JSON(fiber.Map{
 			"ok":    false,
@@ -505,7 +445,7 @@ func (api API) AddTracksToPlaylist(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	err = api.svc.AddTracksToPlaylist(userID, playlistID, req.TrackList)
 	if err != nil {
@@ -523,17 +463,10 @@ func (api API) AddTracksToPlaylist(ctx *fiber.Ctx) error {
 }
 
 func (api API) DeleteTracksFromPlaylist(ctx *fiber.Ctx) error {
-	playlistID, err := strconv.ParseInt(ctx.Params("playlistID"), 10, 64)
-	if err != nil {
-		ctx.Status(400).JSON(fiber.Map{
-			"ok":    false,
-			"error": err.Error(),
-		})
-		return err
-	}
+	playlistID := ctx.Params("playlistID")
 
 	var req model.DeleteTracksFromPlaylistRequest
-	err = ctx.BodyParser(&req)
+	err := ctx.BodyParser(&req)
 	if err != nil {
 		ctx.Status(400).JSON(fiber.Map{
 			"ok":    false,
@@ -542,7 +475,7 @@ func (api API) DeleteTracksFromPlaylist(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	err = api.svc.DeleteTracksFromPlaylist(userID, playlistID, req.TrackList)
 	if err != nil {
@@ -570,7 +503,7 @@ func (api API) AddPlaylistsToUserList(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	err = api.svc.AddPlaylistsToUserList(userID, req.Playlists...)
 	if err != nil {
@@ -598,7 +531,7 @@ func (api API) DeletePlaylistsFromUserList(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	userID := ctx.Context().Value("userID").(int64)
+	userID := ctx.Context().UserValue("userID").(string)
 
 	err = api.svc.DeletePlaylistsFromUserList(userID, req.Playlists...)
 	if err != nil {
