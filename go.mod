@@ -1,13 +1,14 @@
-module github.com/777777miSSU7777777/go-ass
+module go-ass
 
-go 1.12
+go 1.15
+
+replace github.com/777777miSSU7777777/go-ass v0.0.0-20200419191605-5d1ecd3b8dd0 => ./
 
 require (
+	github.com/777777miSSU7777777/go-ass v0.0.0-20200419191605-5d1ecd3b8dd0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gofiber/fiber v1.13.3
-	github.com/gorilla/mux v1.7.3
-	github.com/jinzhu/gorm v1.9.15
-	go.mongodb.org/mongo-driver v1.3.2
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	github.com/gofiber/fiber/v2 v2.0.6
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	gorm.io/driver/postgres v1.0.2
+	gorm.io/gorm v1.20.2
 )

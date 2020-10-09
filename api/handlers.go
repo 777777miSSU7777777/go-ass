@@ -6,7 +6,7 @@ import (
 	"github.com/777777miSSU7777777/go-ass/model"
 
 	"github.com/777777miSSU7777777/go-ass/service"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
 type API struct {
@@ -14,7 +14,7 @@ type API struct {
 	storageManager StorageManager
 }
 
-func NewApi(svc service.Service, storageManager StorageManager) API {
+func NewAPI(svc service.Service, storageManager StorageManager) API {
 	return API{svc, storageManager}
 }
 

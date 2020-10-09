@@ -6,18 +6,20 @@ import (
 	"github.com/777777miSSU7777777/go-ass/helper"
 	"github.com/777777miSSU7777777/go-ass/model"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Repository struct {
 	db *gorm.DB
 }
 
-func NewRepository(dbType string, connectionString string) *Repository {
-	db, err := gorm.Open(dbType, connectionString)
+func NewRepository(connectionString string) Repository {
+	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect to database")
 	}
+
 	fmt.Println("Database connection successfully opened")
 
 	db.AutoMigrate(&model.Artist{})
@@ -33,7 +35,7 @@ func NewRepository(dbType string, connectionString string) *Repository {
 
 	fmt.Println("Database migrated")
 
-	return &Repository{db: db}
+	return Repository{db: db}
 }
 
 func (repo *Repository) GetAllArtists() ([]model.Artist, error) {
@@ -74,15 +76,13 @@ func (repo *Repository) AddNewArtist(newArtist model.Artist) (model.Artist, erro
 		return model.Artist{}, err
 	}
 
-	resultValue := result.Value.(model.Artist)
-
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
 		return model.Artist{}, err
 	}
 
-	return resultValue, nil
+	return newArtist, nil
 }
 
 func (repo *Repository) UpdateArtist(updatedArtist model.Artist) (model.Artist, error) {
@@ -148,15 +148,13 @@ func (repo *Repository) AddNewGenre(newGenre model.Genre) (model.Genre, error) {
 		return model.Genre{}, err
 	}
 
-	resultValue := result.Value.(model.Genre)
-
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
 		return model.Genre{}, err
 	}
 
-	return resultValue, nil
+	return newGenre, nil
 }
 
 func (repo *Repository) UpdateGenre(updatedGenre model.Genre) (model.Genre, error) {
@@ -233,9 +231,7 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 		return model.Playlist{}, err
 	}
 
-	resultValue := result.Value.(model.Playlist)
-
-	userPlaylists := model.UserPlaylists{UserID: resultValue.CreatedByID, PlaylistID: resultValue.PlaylistID}
+	userPlaylists := model.UserPlaylists{UserID: newPlaylist.CreatedByID, PlaylistID: newPlaylist.PlaylistID}
 	err = tx.Create(&userPlaylists).Error
 	if err != nil {
 		tx.Rollback()
@@ -248,7 +244,7 @@ func (repo *Repository) AddNewPlaylist(newPlaylist model.Playlist) (model.Playli
 		return model.Playlist{}, err
 	}
 
-	return resultValue, nil
+	return newPlaylist, nil
 }
 
 func (repo *Repository) UpdatePlaylist(updatedPlaylist model.Playlist) (model.Playlist, error) {
@@ -370,10 +366,8 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 		return model.Track{}, err
 	}
 
-	resultValue := result.Value.(model.Track)
-
-	if resultValue.UploadedByID != 0 {
-		userTracks := model.UserTracks{UserID: resultValue.UploadedByID, TrackID: resultValue.TrackID}
+	if newTrack.UploadedByID != 0 {
+		userTracks := model.UserTracks{UserID: newTrack.UploadedByID, TrackID: newTrack.TrackID}
 		err := tx.Create(&userTracks).Error
 		if err != nil {
 			tx.Rollback()
@@ -381,8 +375,8 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 		}
 	}
 
-	if resultValue.GenreID != 0 {
-		genreTracks := model.GenreTracks{GenreID: resultValue.GenreID, TrackID: resultValue.TrackID}
+	if newTrack.GenreID != 0 {
+		genreTracks := model.GenreTracks{GenreID: newTrack.GenreID, TrackID: newTrack.TrackID}
 		err := tx.Create(&genreTracks).Error
 		if err != nil {
 			tx.Rollback()
@@ -390,7 +384,7 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 		}
 	}
 
-	err = uploadTrack(resultValue.TrackID)
+	err = uploadTrack(newTrack.TrackID)
 	if err != nil {
 		tx.Rollback()
 		return model.Track{}, err
@@ -402,7 +396,7 @@ func (repo *Repository) AddNewTrack(newTrack model.Track, uploadTrack helper.Upl
 		return model.Track{}, err
 	}
 
-	return resultValue, nil
+	return newTrack, nil
 }
 
 func (repo *Repository) UpdateTrack(updatedTrack model.Track) (model.Track, error) {
@@ -518,15 +512,13 @@ func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 		return model.User{}, nil
 	}
 
-	resultValue := result.Value.(model.User)
-
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
 		return model.User{}, err
 	}
 
-	return resultValue, nil
+	return newUser, nil
 }
 
 func (repo *Repository) UpdateUser(updatedUser model.User) (model.User, error) {
