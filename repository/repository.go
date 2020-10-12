@@ -531,7 +531,7 @@ func (repo *Repository) AddNewUser(newUser model.User) (model.User, error) {
 	err := result.Error
 	if err != nil {
 		tx.Rollback()
-		return model.User{}, nil
+		return model.User{}, err
 	}
 
 	err = tx.Commit().Error
