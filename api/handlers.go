@@ -433,7 +433,7 @@ func (api API) DeletePlaylistByID(ctx *fiber.Ctx) error {
 }
 
 func (api API) AddTracksToPlaylist(ctx *fiber.Ctx) error {
-	playlistID := ctx.Params("playlistID")
+	playlistID := ctx.Params("playlistId")
 
 	var req model.AddTracksToPlaylistRequest
 	err := ctx.BodyParser(&req)
@@ -463,7 +463,7 @@ func (api API) AddTracksToPlaylist(ctx *fiber.Ctx) error {
 }
 
 func (api API) DeleteTracksFromPlaylist(ctx *fiber.Ctx) error {
-	playlistID := ctx.Params("playlistID")
+	playlistID := ctx.Params("playlistId")
 
 	var req model.DeleteTracksFromPlaylistRequest
 	err := ctx.BodyParser(&req)
