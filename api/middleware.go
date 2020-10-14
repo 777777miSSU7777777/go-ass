@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -45,6 +46,18 @@ func JWTAuthMiddleware(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Context().SetUserValue("userID", claims["userId"])
+	ctx.Next()
+	return nil
+}
+
+func UserAudioMiddleware(ctx *fiber.Ctx) error {
+	tokenUserID := ctx.Context().UserValue("userID").(string)
+	paramsUserID := ctx.Params("userId")
+
+	if (tokenUserID != paramsUserID) {
+		return fmt.Errorf("You are not allowed to fetch/modify audio for this user")
+	}
+
 	ctx.Next()
 	return nil
 }

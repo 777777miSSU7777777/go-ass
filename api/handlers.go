@@ -255,7 +255,7 @@ func (api API) SignOut(ctx *fiber.Ctx) error {
 }
 
 func (api API) GetUserTrackList(ctx *fiber.Ctx) error {
-	userID := ctx.Context().UserValue("userID").(string)
+	userID := ctx.Params("userId")
 
 	userTrackList, err := api.svc.GetUserTrackList(userID)
 	if err != nil {
@@ -273,7 +273,7 @@ func (api API) GetUserTrackList(ctx *fiber.Ctx) error {
 }
 
 func (api API) AddTracksToUserTrackList(ctx *fiber.Ctx) error {
-	userID := ctx.Context().UserValue("userID").(string)
+	userID := ctx.Params("userId")
 
 	var req model.AddTracksToUserListRequest
 	err := ctx.BodyParser(&req)
@@ -301,7 +301,7 @@ func (api API) AddTracksToUserTrackList(ctx *fiber.Ctx) error {
 }
 
 func (api API) DeleteTracksFromUserList(ctx *fiber.Ctx) error {
-	userID := ctx.Context().UserValue("userID").(string)
+	userID := ctx.Params("userId")
 
 	var req model.DeleteTracksFromUserListRequest
 	err := ctx.BodyParser(&req)
@@ -346,7 +346,7 @@ func (api API) GetAllPlaylists(ctx *fiber.Ctx) error {
 }
 
 func (api API) GetUserPlaylists(ctx *fiber.Ctx) error {
-	userID := ctx.Context().UserValue("userID").(string)
+	userID := ctx.Params("userId")
 
 	userPlaylists, err := api.svc.GetUserPlaylists(userID)
 	if err != nil {
@@ -503,7 +503,7 @@ func (api API) AddPlaylistsToUserList(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	userID := ctx.Context().UserValue("userID").(string)
+	userID := ctx.Params("userId")
 
 	err = api.svc.AddPlaylistsToUserList(userID, req.Playlists...)
 	if err != nil {
@@ -531,7 +531,7 @@ func (api API) DeletePlaylistsFromUserList(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	userID := ctx.Context().UserValue("userID").(string)
+	userID := ctx.Params("userId")
 
 	err = api.svc.DeletePlaylistsFromUserList(userID, req.Playlists...)
 	if err != nil {

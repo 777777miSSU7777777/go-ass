@@ -6,26 +6,36 @@ import (
 
 func SetupAPIRouter(app *fiber.App, api API) {
 	publicAPI := app.Group("/api")
-	publicAPI.Get("/audio/tracks", api.GetAllTracks)
-	publicAPI.Get("/audio/tracks/:trackId", api.GetTrackByID)
-	publicAPI.Get("/audio/playlists", api.GetAllPlaylists)
-	publicAPI.Get("/audio/playlists/:playlistId", api.GetPlaylistByID)
+	publicAPI.Get("/tracks", api.GetAllTracks)
+	publicAPI.Get("/tracks/:trackId", api.GetTrackByID)
+	publicAPI.Get("/playlists", api.GetAllPlaylists)
+	publicAPI.Get("/playlists/:playlistId", api.GetPlaylistByID)
 
 	privateAPI := app.Group("/api")
 	privateAPI.Use(JWTAuthMiddleware)
-	privateAPI.Post("/audio/tracks", api.AddNewTrack)
-	privateAPI.Put("/audio/tracks/:trackId", api.UpdateTrackByID)
-	privateAPI.Delete("/audio/tracks/:trackId", api.DeleteTrackByID)
-	privateAPI.Get("/audio/user-list", api.GetUserTrackList)
-	privateAPI.Patch("/audio/user-list/add", api.AddTracksToUserTrackList)
-	privateAPI.Patch("/audio/user-list/delete", api.DeleteTracksFromUserList)
-	privateAPI.Post("/audio/playlists", api.CreateNewPlaylist)
-	privateAPI.Delete("/audio/playlists/:playlistId", api.DeletePlaylistByID)
-	privateAPI.Patch("audio/playlists/:playlistId/add", api.AddTracksToPlaylist)
-	privateAPI.Patch("/audio/playlists/:playlistId/delete", api.DeleteTracksFromPlaylist)
-	privateAPI.Get("/audio/user-playlists", api.GetUserPlaylists)
-	privateAPI.Patch("/audio/user-playlists/add", api.AddPlaylistsToUserList)
-	privateAPI.Patch("/audio/user-playlists/delete", api.DeletePlaylistsFromUserList)
+
+	tracksAPI := privateAPI.Group("")
+	tracksAPI.Post("/tracks", api.AddNewTrack)
+	tracksAPI.Put("/tracks/:trackId", api.UpdateTrackByID)
+	tracksAPI.Delete("/tracks/:trackId", api.DeleteTrackByID)
+
+	userTracksAPI := privateAPI.Group("")
+	userTracksAPI.Use(UserAudioMiddleware)
+	userTracksAPI.Get("/user/:userId/tracks", api.GetUserTrackList)
+	userTracksAPI.Post("/user/:userId/tracks", api.AddTracksToUserTrackList)
+	userTracksAPI.Delete("/user/:userId/tracks", api.DeleteTracksFromUserList)
+
+	playlistsAPI := privateAPI.Group("")
+	playlistsAPI.Post("/playlists", api.CreateNewPlaylist)
+	playlistsAPI.Delete("/playlists/:playlistId", api.DeletePlaylistByID)
+	playlistsAPI.Post("/playlists/:playlistId/tracks", api.AddTracksToPlaylist)
+	playlistsAPI.Delete("/playlists/:playlistId/tracks", api.DeleteTracksFromPlaylist)
+
+	userPlaylistsAPI := privateAPI.Group("")
+	userPlaylistsAPI.Use(UserAudioMiddleware)
+	userPlaylistsAPI.Get("/user/:userId/playlists", api.GetUserPlaylists)
+	userPlaylistsAPI.Post("/user/:userId/playlists", api.AddPlaylistsToUserList)
+	userPlaylistsAPI.Delete("/user/:userId/playlists", api.DeletePlaylistsFromUserList)
 }
 
 func SetupAuthRouter(app *fiber.App, api API) {
