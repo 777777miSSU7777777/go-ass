@@ -13,17 +13,21 @@ services:
     volumes: 
       - ${HOME}/.goass/storage:/app/storage
     environment: 
-      CONNECTION_STRING: 'mongodb://db:27017'
+      CONNECTION_STRING: 'postgresql://db:${DB_PORT}/${DB_NAME}?user=${DB_USER}&password=${DB_PASSWORD}'
       STORAGE_LOCATION: './storage'
-      API_ONLY: 'true'
-  
+
   db:
-    image: mongo:4.2.5
+    image: postgres
+    restart: always
     ports:
-      - 27017:27017
+      - 5432:5432
     volumes:
-      - mongodb_data_container:/app/db
+      - postgres_data:/var/lib/postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
 
 volumes: 
-  mongodb_data_container:
+  postgres_data:
     
