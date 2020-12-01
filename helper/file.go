@@ -14,11 +14,11 @@ type DeleteTrackCallback func() error
 var MasterManifestTemplate = "#EXTM3U\n" +
 	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
 	"64k.m3u8\n" +
-	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=96000\n" +
 	"96k.m3u8\n" +
-	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=128000\n" +
 	"128k.m3u8\n" +
-	"#EXT-X-STREAM-INF:BANDWIDTH=64000\n" +
+	"#EXT-X-STREAM-INF:BANDWIDTH=192000\n" +
 	"192k.m3u8\n"
 
 func SaveMP3File(dirPath string, filename string, fileBytes []byte) error {
