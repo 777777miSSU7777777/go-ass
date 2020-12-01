@@ -1,0 +1,52 @@
+.signInPage {
+    & .signInFormWrapper {
+        display: flex;
+        justify-content: center;
+    }
+
+    & .signInForm {
+        margin-top: 5%;
+        width: 20%;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        
+        & .header {
+            font-size: 48px;
+            text-align: center;
+        }
+
+        & .group {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+            & .label {
+                font-size: 32px;
+            }
+
+            & .field {
+                margin-top: 5px;
+                font-size: 24px;
+            }
+        }
+
+        & .submit {
+            margin-top: 60px;
+            width: 50%;
+            font-size: 36px;
+            cursor: pointer;
+            background-color: #fff;
+            border: 0;
+            outline: none;
+            padding: 5px;
+            border: 4px solid #000;
+
+            &:hover {
+                background-color: #000;
+                color: #fff;
+            }
+        }
+    }
+}

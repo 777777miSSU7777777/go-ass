@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "paths": {
+      "@app/*": ["./src/*"],
+      "@model": ["./src/db/model"],
+      "@enums": ["./src/enums"],
+      "@helper": ["./src/helper"],
+      "@service": ["./src/service"],
+      "@middleware": ["./src/middleware"],
+      "@controller/*": ["./src/controller/*"],
+    }
+  }
+}

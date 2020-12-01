@@ -1,0 +1,44 @@
+.header {
+    margin: 0;
+    height: 80px;
+    // border: 1px solid black;
+    border-bottom: 2px solid #777;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+
+    & .brandLogo {
+        font-size: 32px;
+    }
+
+    & .signInButton {
+        font-size: 32px;
+        cursor: pointer;
+        background-color: #fff;
+        border: 0;
+        outline: none;
+        padding: 5px;
+        border: 4px solid #000;
+
+        &:hover {
+            background-color: #000;
+            color: #fff;
+        }
+    }
+
+    & .signOutButton {
+        font-size: 32px;
+        cursor: pointer;
+        background-color: #fff;
+        border: 0;
+        outline: none;
+        padding: 5px;
+        border: 4px solid #000;
+
+        &:hover {
+            background-color: #000;
+            color: #fff;
+        }
+    }
+}

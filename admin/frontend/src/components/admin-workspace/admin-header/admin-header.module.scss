@@ -1,0 +1,26 @@
+.adminHeader {
+    height: 40px;
+    display: flex;
+
+    & .link {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #777;
+        border-left: 0;
+        border-top: 0;
+        padding: 20px 30px;
+
+        text-decoration: none;
+        color: #000;
+        
+        &:hover {
+            color: #fff;
+            background-color: #000;
+        }
+
+        &:active {
+            text-decoration: none;
+        }
+    }
+}
