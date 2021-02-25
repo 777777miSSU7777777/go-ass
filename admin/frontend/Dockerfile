@@ -1,8 +1,6 @@
 # Front build stage
 FROM node:lts-buster AS builder
 
-EXPOSE 3000
-
 ARG REACT_APP_API_URL
 
 ADD . /src
@@ -12,10 +10,10 @@ RUN cd /src && npm install && npm run-script build
 # Front serve stage
 FROM nginx:stable as runtime
 
-WORKDIR /usr/share/nginx/html
+EXPOSE 3000
 
-RUN rm -rf ./*
+COPY --from=builder /src/build /app
 
-COPY --from=builder /src/build .
+COPY --from=builder /src/config/nginx/nginx.conf /config/nginx.conf
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;", "-c", "/config/nginx.conf"]
